@@ -23,9 +23,11 @@ function linePath(pts: [number, number][], tension = 0.35) {
    and a tooltip. One series, so no legend: the title names it.
    =============================================================== */
 export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'var(--c1)',
-                            valueSuffix = '', ariaLabel }: {
+                            valueSuffix = '', ariaLabel, trace = false }: {
   data: number[]; labels: string[]; forecastFrom?: number; height?: number;
   color?: string; valueSuffix?: string; ariaLabel: string;
+  /** Run a dot along the line as it draws, so arrival is unmistakable. */
+  trace?: boolean;
 }) {
   const uid = useId().replace(/:/g, '');
   const ref = useRef<SVGSVGElement>(null);
@@ -85,6 +87,17 @@ export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'v
             initial={reduced ? false : { pathLength: 0 }}
             animate={inView ? { pathLength: 1 } : {}}
             transition={{ duration: 0.7, delay: 1, ease: EASE }} />
+        )}
+
+        {/* the travelling head: rides the line while it draws */}
+        {trace && !reduced && (
+          <motion.circle
+            r="5" cx={0} cy={0} fill={color} stroke="var(--surface)" strokeWidth="2"
+            style={{ offsetPath: `path("${solid}")`, offsetRotate: '0deg' }}
+            initial={{ offsetDistance: '0%', opacity: 0 }}
+            animate={inView ? { offsetDistance: '100%', opacity: [0, 1, 1, 0] } : {}}
+            transition={{ duration: 1.6, ease: 'easeInOut', times: undefined }}
+          />
         )}
 
         {hover != null && (

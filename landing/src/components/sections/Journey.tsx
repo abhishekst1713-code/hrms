@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { motion, useScroll, useTransform, useReducedMotion, type MotionValue } from 'motion/react';
 import { Eyebrow } from '../primitives';
 import { EASE } from '../../lib/motion';
@@ -22,6 +22,42 @@ const STEPS: Step[] = [
     d: 'Resignation opens a five-stage pipeline, five clearances are ticked, and the relieving letter is released at the end of it.',
     detail: 'IT assets, finance, admin, HR documents and access cards each clear before the record closes.' },
 ];
+
+/**
+ * A stage card. Its detail line opens by itself as the spine reaches the
+ * stage, so the reader never has to guess that something is clickable.
+ */
+function StageCard({ s, i, left, progress }: {
+  s: Step; i: number; left: boolean; progress: MotionValue<number>;
+}) {
+  const reduced = useReducedMotion();
+  const at = i / STEPS.length;
+  const open = useTransform(progress, [at - 0.04, at + 0.05], [0, 1], { clamp: true });
+  const detailH = useTransform(open, [0, 1], [0, 62]);
+  const ring = useTransform(open, [0, 1], ['var(--border)', 'var(--blue-300)']);
+
+  return (
+    <motion.div
+      initial={reduced ? false : { opacity: 0, x: left ? -28 : 28 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: '-18% 0px' }}
+      transition={{ duration: 0.6, ease: EASE }}
+      whileHover={reduced ? undefined : { scale: 1.015 }}
+      style={{ borderColor: reduced ? undefined : ring }}
+      className={`panel p-6 transition-shadow duration-300
+                  hover:shadow-[0_0_0_1px_var(--blue-200),0_18px_44px_-12px_rgba(61,124,246,.34)]
+                  ${left ? 'md:text-right' : ''}`}>
+      <h3 className="t-h4 text-ink">{s.t}</h3>
+      <p className="t-body mt-2 text-ink-2">{s.d}</p>
+      <motion.div style={reduced ? undefined : { height: detailH, opacity: open }}
+                  className="overflow-hidden">
+        <p className="mt-3 border-t border-hairline-blue pt-3 text-[14px] font-600 text-brand-700">
+          {s.detail}
+        </p>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 function Node({ i, progress }: { i: number; progress: MotionValue<number> }) {
   const at = i / STEPS.length;
@@ -50,7 +86,6 @@ function Node({ i, progress }: { i: number; progress: MotionValue<number> }) {
 export default function Journey() {
   const track = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
-  const [open, setOpen] = useState<number | null>(null);
   const { scrollYProgress } = useScroll({
     target: track,
     offset: ['start 0.7', 'end 0.65'],
@@ -80,42 +115,7 @@ export default function Journey() {
           <ol className="grid gap-10 md:gap-14">
             {STEPS.map((s, i) => {
               const left = i % 2 === 0;   // desktop: alternate sides of the spine
-              const on = open === i;
-              const Card = (
-                <motion.div
-                  initial={reduced ? false : { opacity: 0, x: left ? -28 : 28 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: '-18% 0px' }}
-                  transition={{ duration: 0.6, ease: EASE }}>
-                  <div className={`panel relative p-6 transition-all duration-300
-                                   hover:shadow-[var(--shadow-md)]
-                                   ${on ? 'border-brand-400 shadow-[var(--shadow-md)]' : ''}
-                                   ${left ? 'md:text-right' : ''}`}>
-                    <button type="button" onClick={() => setOpen(on ? null : i)} aria-expanded={on}
-                      className="absolute inset-0 z-10 cursor-pointer rounded-[16px]">
-                      <span className="sr-only">
-                        {on ? 'Hide detail for' : 'Show detail for'} {s.t}
-                      </span>
-                    </button>
-                    <div className="relative">
-                      <h3 className="t-h4 text-ink">{s.t}</h3>
-                      <p className="t-body mt-2 text-ink-2">{s.d}</p>
-                      <motion.div initial={false} aria-hidden={!on}
-                        animate={{ height: on ? 'auto' : 0, opacity: on ? 1 : 0 }}
-                        transition={{ duration: reduced ? 0 : 0.3, ease: EASE }}
-                        className="overflow-hidden">
-                        <p className="mt-3 border-t border-hairline-blue pt-3 text-[14px] font-600 text-brand-700">
-                          {s.detail}
-                        </p>
-                      </motion.div>
-                      <span className={`t-micro mt-3 inline-block transition-colors
-                        ${on ? 'text-ink-3' : 'text-brand-700'}`}>
-                        {on ? 'Hide' : 'What that means'}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              );
+              const Card = <StageCard s={s} i={i} left={left} progress={scrollYProgress} />;
               return (
                 <li key={s.n}
                     className="relative flex items-start gap-5 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-8">

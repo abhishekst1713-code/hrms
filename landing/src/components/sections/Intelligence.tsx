@@ -8,16 +8,12 @@ import { EASE } from '../../lib/motion';
 const HEADCOUNT = [14, 15, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20];
 const MONTHS = ['Oct','','Dec','','Feb','','Apr','','Jun','','Aug','Sep'];
 
-/* The heads the compliance register actually totals, from
-   backend/routes/analytics.py and payroll_engine.py. */
-const REGISTER = [
-  { k: 'Gross',          v: '₹10,18,550' },
-  { k: 'PF, employer',   v: '₹28,800' },
-  { k: 'PF, employee',   v: '₹28,800' },
-  { k: 'ESI, employer',  v: '₹3,240' },
-  { k: 'ESI, employee',  v: '₹748' },
-  { k: 'Professional tax', v: '₹3,200' },
-  { k: 'TDS',            v: '₹28,580' },
+/* Where the month's punches came from. Both sources write to
+   attendance_punches and roll into attendance_daily. */
+const SOURCES = [
+  { k: 'Biometric device', v: 62, tone: 'var(--d1)', n: 'eSSL / ZKTeco' },
+  { k: 'Web self-punch',   v: 31, tone: 'var(--d2)', n: 'browser check in' },
+  { k: 'Manual correction',v: 7,  tone: 'var(--d4)', n: 'HR adjusted' },
 ];
 
 const AUDIT = [
@@ -56,7 +52,7 @@ export default function Intelligence() {
             <ChartLineUpIcon size={15} weight="bold" aria-hidden /> Reporting and compliance
           </p>
           <h2 className="t-h2 mt-4 text-balance text-white">
-            Numbers you can file, and a record of who changed them
+            The month, read back to you
           </h2>
           <p className="t-body-xl mt-5 text-[var(--on-deep-2)]">
             Headcount and the statutory register are derived from the payroll runs
@@ -66,7 +62,9 @@ export default function Intelligence() {
 
         <div className="mt-14 grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           {/* headcount */}
-          <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
+          <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm
+                          transition-shadow duration-300
+                          hover:shadow-[0_0_0_1px_rgba(255,255,255,.18),0_18px_44px_-12px_rgba(61,124,246,.45)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="t-h4 text-white">Headcount, twelve months</h3>
@@ -77,7 +75,7 @@ export default function Intelligence() {
               <SampleTag />
             </div>
             <div className="mt-5">
-              <TrendLine data={HEADCOUNT} labels={MONTHS} height={190} color="var(--d1)"
+              <TrendLine data={HEADCOUNT} labels={MONTHS} height={190} color="var(--d1)" trace
                 ariaLabel="Headcount rising from fourteen to twenty over twelve months." />
             </div>
             <dl className="mt-5 grid grid-cols-3 gap-4 border-t border-white/10 pt-5">
@@ -95,31 +93,55 @@ export default function Intelligence() {
 
           {/* register + audit */}
           <div className="grid gap-5">
-            <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
+            <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm
+                            transition-shadow duration-300
+                            hover:shadow-[0_0_0_1px_rgba(255,255,255,.18),0_18px_44px_-12px_rgba(61,124,246,.45)]">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="t-h4 text-white">Compliance register</h3>
+                <h3 className="t-h4 text-white">Where the punches came from</h3>
                 <ShieldCheckIcon size={19} weight="light" className="text-[var(--good-deep)]" aria-hidden />
               </div>
-              <dl className="mt-4 grid gap-0">
-                {REGISTER.map((r, i) => (
-                  <motion.div key={r.k}
+              <p className="t-small mt-1 text-[var(--on-deep-2)]">September, 304 daily records</p>
+
+              {/* one bar, three segments, each growing as the section arrives */}
+              <div className="mt-5 flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-white/10">
+                {SOURCES.map((x, i) => (
+                  <motion.span key={x.k}
+                    className="h-full first:rounded-l-full last:rounded-r-full"
+                    style={{ background: x.tone }}
+                    initial={reduced ? false : { width: 0 }}
+                    whileInView={{ width: `${x.v}%` }}
+                    viewport={{ once: true, margin: '-12% 0px' }}
+                    transition={{ duration: 0.9, delay: 0.2 + i * 0.14, ease: EASE }} />
+                ))}
+              </div>
+
+              <ul className="mt-5 grid gap-3">
+                {SOURCES.map((x, i) => (
+                  <motion.li key={x.k}
                     initial={reduced ? false : { opacity: 0, x: 12 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: '-10% 0px' }}
-                    transition={{ duration: 0.4, delay: i * 0.06, ease: EASE }}
-                    className="flex items-baseline justify-between gap-3 border-b border-white/8 py-2
-                               last:border-0">
-                    <dt className="text-[13px] text-[var(--on-deep-2)]">{r.k}</dt>
-                    <dd className="tnum text-[13px] font-800 text-white">{r.v}</dd>
-                  </motion.div>
+                    transition={{ duration: 0.45, delay: 0.3 + i * 0.1, ease: EASE }}
+                    className="flex items-center gap-3">
+                    <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ background: x.tone }} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-700 leading-tight text-white">{x.k}</span>
+                      <span className="block text-[11px] text-[var(--on-deep-2)]">{x.n}</span>
+                    </span>
+                    <span className="tnum text-[15px] font-800 text-white">{x.v}%</span>
+                  </motion.li>
                 ))}
-              </dl>
-              <p className="t-micro mt-3 normal-case tracking-normal text-[var(--on-deep-2)]">
-                A filing reference, not a substitute for the returns themselves.
+              </ul>
+
+              <p className="t-micro mt-4 normal-case tracking-normal text-[var(--on-deep-2)]">
+                Both sources write to the same punch log, then roll into one daily record.
               </p>
             </div>
 
-            <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
+            <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm
+                            transition-shadow duration-300
+                            hover:shadow-[0_0_0_1px_rgba(255,255,255,.18),0_18px_44px_-12px_rgba(61,124,246,.45)]">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="t-h4 text-white">Audit log</h3>
                 <ListChecksIcon size={19} weight="light" className="text-[var(--on-deep-3)]" aria-hidden />

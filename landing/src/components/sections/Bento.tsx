@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   CurrencyInrIcon, CalendarBlankIcon, ClockIcon, FileTextIcon,
-  LightningIcon, SignOutIcon, LockKeyIcon, PlugsConnectedIcon,
+  LightningIcon, SignOutIcon, LockKeyIcon,
 } from '@phosphor-icons/react';
 import { Eyebrow, Chip, RevealGroup } from '../primitives';
 import { BarRows } from '../charts';
@@ -16,15 +16,25 @@ function Cell({ className = '', children, live }: {
 }) {
   return (
     <Item variants={revealUp}
+      whileHover={{ scale: 1.012 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 22 }}
       className={`group relative overflow-hidden rounded-[12px] border border-hairline bg-surface p-6
-                  transition-[border-color,box-shadow] duration-300 hover:border-hairline-blue
-                  hover:shadow-[var(--shadow-md)] ${className}`}>
+                  transition-[border-color,box-shadow] duration-300
+                  hover:border-brand-300 hover:shadow-[0_0_0_1px_var(--blue-200),0_18px_44px_-12px_rgba(61,124,246,.38)]
+                  ${className}`}>
+      {/* the glow: a brand wash that lifts in behind the content on hover */}
+      <span aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300
+                   group-hover:opacity-100"
+        style={{ background: 'radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--blue-400) 9%, transparent) 0%, transparent 70%)' }} />
+      <span className="relative block">
       {live && (
-        <span className="absolute right-5 top-5">
+        <span className="absolute right-5 top-5 z-10">
           <Chip tone="brand">Live</Chip>
         </span>
       )}
       {children}
+      </span>
     </Item>
   );
 }
@@ -50,7 +60,7 @@ export default function Bento() {
           <div className="max-w-[54ch]">
             <Eyebrow>The platform</Eyebrow>
             <h2 className="t-h2 mt-4 text-balance text-ink">
-              Eight modules on one employee record
+              Seven modules on one employee record
             </h2>
           </div>
           <p className="t-body max-w-[42ch] text-ink-2">
@@ -229,34 +239,6 @@ export default function Bento() {
             </div>
           </Cell>
 
-          {/* 8 — integrations */}
-          <Cell className="lg:col-span-6" live>
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:items-center">
-              <div>
-                <Title icon={PlugsConnectedIcon}>API, webhooks and audit</Title>
-                <p className="t-body mt-3 max-w-[44ch] text-ink-2">
-                  Per-tenant API keys, a read API for your other systems, outbound
-                  events, and an audit log behind it all.
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {[
-                  { h: 'Read API', l: ['GET /employees', 'GET /attendance', 'GET /calendar.ics'] },
-                  { h: 'Webhooks', l: ['employee.exited', 'expense.approved'] },
-                  { h: 'At rest', l: ['KYC uploads encrypted', 'Aadhaar, PAN, passbook', 'Audit log'] },
-                ].map(g => (
-                  <div key={g.h} className="rounded-[8px] border border-hairline bg-surface-tint p-3">
-                    <p className="t-micro text-ink-3">{g.h}</p>
-                    <ul className="mt-2 grid gap-1">
-                      {g.l.map(x => (
-                        <li key={x} className="text-[12px] leading-snug text-ink">{x}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Cell>
         </RevealGroup>
       </div>
     </section>
