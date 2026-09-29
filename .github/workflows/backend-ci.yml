@@ -44,9 +44,14 @@ jobs:
       - name: Run tests (if any exist)
         working-directory: backend
         run: |
-          if find . -path ./venv -prune -o -name 'test_*.py' -print -o -name '*_test.py' -print | grep -q .; then
-            pip install pytest
-            python -m pytest -q
+          pip install pytest
+          if python -m pytest -q; then
+            result=0
           else
-            echo "No test files found — skipping. Add backend/tests/ to start covering this."
+            result=$?
           fi
+          if [ "$result" -eq 5 ]; then
+            echo "No pytest tests collected — skipping until backend tests are added."
+            exit 0
+          fi
+          exit "$result"
