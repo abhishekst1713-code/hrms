@@ -6,21 +6,21 @@ import { EASE } from '../../lib/motion';
 type Step = { n: number; t: string; d: string; detail: string };
 
 const STEPS: Step[] = [
-  { n: 1, t: 'Define goals',
-    d: 'Board objectives are written once and cascaded down, so every target on the floor still points at the original.',
-    detail: 'One objective splits into department targets, then individual goals, each carrying a link back to its parent.' },
-  { n: 2, t: 'Track progress',
-    d: 'Attendance, leave and delivery data land against the same record continuously, not in a scramble at year end.',
-    detail: 'Biometric punches, web logins and approved leave all write to one daily record per person.' },
-  { n: 3, t: 'Review performance',
-    d: 'Managers rate against evidence already on the record, with the balance and history in front of them.',
-    detail: 'The reviewer sees attendance, leave taken and goal completion on the same screen as the rating.' },
-  { n: 4, t: 'Generate insights',
-    d: 'Trends, outliers and statutory totals compile themselves from runs you actually processed.',
-    detail: 'Headcount, attrition and the PF, ESI and TDS register are derived, never keyed in twice.' },
-  { n: 5, t: 'Drive growth',
-    d: 'The board gets a defensible picture, and the next cycle starts from what the last one proved.',
-    detail: 'Last cycle\u2019s outcomes seed the next set of objectives, so the loop closes.' },
+  { n: 1, t: 'Offer and accept',
+    d: 'The offer letter is generated from your template, routed through its approval chain, and versioned if the terms are revised.',
+    detail: 'Offer letters carry new and revised subtypes, and each revision keeps the version before it.' },
+  { n: 2, t: 'Appoint and join',
+    d: 'Acceptance creates the login, the appointment order follows, and joining documents are collected against the record.',
+    detail: 'KYC uploads, Aadhaar, PAN and bank passbook, are encrypted at rest before they are stored.' },
+  { n: 3, t: 'Run the month',
+    d: 'Attendance arrives from the device and the browser, leave is requested against its cap, and expenses and assets sit on the same record.',
+    detail: 'Punches from either source roll into one daily record, which is what payroll then reads.' },
+  { n: 4, t: 'Pay and file',
+    d: 'Payroll computes provident fund, state insurance, professional tax and TDS per run, and the compliance register totals it for filing.',
+    detail: 'Loss of pay is applied in the same pass, so the payslip and the register agree by construction.' },
+  { n: 5, t: 'Exit and clear',
+    d: 'Resignation opens a five-stage pipeline, five clearances are ticked, and the relieving letter is released at the end of it.',
+    detail: 'IT assets, finance, admin, HR documents and access cards each clear before the record closes.' },
 ];
 
 function Node({ i, progress }: { i: number; progress: MotionValue<number> }) {
@@ -61,9 +61,10 @@ export default function Journey() {
       <div className="rail">
         <div className="mx-auto max-w-[62ch] text-center">
           <Eyebrow>The method</Eyebrow>
-          <h2 className="t-h2 mt-4 text-balance text-ink">A proven transformation methodology</h2>
+          <h2 className="t-h2 mt-4 text-balance text-ink">Offer letter to final settlement</h2>
           <p className="t-body-xl mt-5 text-ink-2">
-            Five stages, run on a loop. Each one leaves a record the next one can use.
+            One record per employee, carried through five stages. Each one leaves
+            behind what the next one needs.
           </p>
         </div>
 

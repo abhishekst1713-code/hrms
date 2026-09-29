@@ -1,32 +1,42 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
-import { TrendUpIcon, WarningIcon, PulseIcon } from '@phosphor-icons/react';
+import { ShieldCheckIcon, ListChecksIcon, ChartLineUpIcon } from '@phosphor-icons/react';
 import { TrendLine } from '../charts';
 import { Counter, SampleTag } from '../primitives';
 import { EASE } from '../../lib/motion';
 
-const FORECAST = [58, 61, 60, 64, 67, 66, 70, 73, 71, 76, 79, 83, 86, 89];
-const FLABELS  = ['Q1','','Q2','','Q3','','Q4','','Q1','','Q2','','Q3','Q4'];
+const HEADCOUNT = [14, 15, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20];
+const MONTHS = ['Oct','','Dec','','Feb','','Apr','','Jun','','Aug','Sep'];
 
-const RISKS = [
-  { role: 'Cloud architect, core engineering', score: 82, note: 'No review logged in three cycles, two peers exited this quarter.' },
-  { role: 'Enterprise sales lead, BFSI',        score: 68, note: 'Goal completion down 24 points against a rising quota.' },
-  { role: 'Shift supervisor, manufacturing',    score: 41, note: 'Overtime up, but attendance and output both stable.' },
+/* The heads the compliance register actually totals, from
+   backend/routes/analytics.py and payroll_engine.py. */
+const REGISTER = [
+  { k: 'Gross',          v: '₹10,18,550' },
+  { k: 'PF, employer',   v: '₹28,800' },
+  { k: 'PF, employee',   v: '₹28,800' },
+  { k: 'ESI, employer',  v: '₹3,240' },
+  { k: 'ESI, employee',  v: '₹748' },
+  { k: 'Professional tax', v: '₹3,200' },
+  { k: 'TDS',            v: '₹28,580' },
+];
+
+const AUDIT = [
+  { who: 'Priyanka Nair', did: 'released payslips', what: 'September 2026, 16 employees', ago: '2h' },
+  { who: 'Ananya Krishnamurthy', did: 'approved leave', what: 'MT108, 3 days casual', ago: '5h' },
+  { who: 'Priyanka Nair', did: 'generated offer letter', what: 'v2, revised terms', ago: '1d' },
 ];
 
 export default function Intelligence() {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
-  // gentle parallax on the backdrop only: transform, nothing else
   const gridY = useTransform(scrollYProgress, [0, 1], ['-6%', '6%']);
   const glowY = useTransform(scrollYProgress, [0, 1], ['12%', '-12%']);
 
   return (
-    <section id="intelligence" ref={ref}
+    <section id="reporting" ref={ref}
       className="relative isolate overflow-hidden bg-[var(--surface-deep)] py-24 text-[var(--on-deep)] lg:py-32">
 
-      {/* backdrop: a technical grid, parallaxed. No mesh gradient. */}
       <motion.div aria-hidden style={reduced ? undefined : { y: gridY }}
         className="pointer-events-none absolute inset-x-0 -top-[10%] h-[120%] opacity-[0.10]">
         <div className="h-full w-full"
@@ -37,96 +47,97 @@ export default function Intelligence() {
       <motion.div aria-hidden style={reduced ? undefined : { y: glowY }}
         className="pointer-events-none absolute -right-32 top-1/4 h-[460px] w-[460px] rounded-full opacity-25">
         <div className="h-full w-full rounded-full"
-          style={{ background: 'radial-gradient(circle, var(--d1) 0%, transparent 65%)' }} />
+             style={{ background: 'radial-gradient(circle, var(--d1) 0%, transparent 65%)' }} />
       </motion.div>
 
       <div className="rail relative">
         <div className="max-w-[58ch]">
           <p className="t-micro flex items-center gap-2 text-[var(--on-deep-3)]">
-            <PulseIcon size={15} weight="bold" aria-hidden /> Workforce intelligence
+            <ChartLineUpIcon size={15} weight="bold" aria-hidden /> Reporting and compliance
           </p>
           <h2 className="t-h2 mt-4 text-balance text-white">
-            Deep workforce intelligence and risk mitigation
+            Numbers you can file, and a record of who changed them
           </h2>
           <p className="t-body-xl mt-5 text-[var(--on-deep-2)]">
-            The same records, read forward. Trends, forecasts and the people most
-            likely to leave before anyone files a resignation.
+            Headcount and the statutory register are derived from the payroll runs
+            you actually processed. Nothing here is keyed in twice.
           </p>
         </div>
 
-        <div className="mt-14 grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-          {/* forecast */}
+        <div className="mt-14 grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          {/* headcount */}
           <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h3 className="t-h4 text-white">Performance index and forecast</h3>
+                <h3 className="t-h4 text-white">Headcount, twelve months</h3>
                 <p className="t-small mt-1 text-[var(--on-deep-2)]">
-                  Solid to date, dashed is projected
+                  From <span className="font-700">GET /api/analytics/headcount</span>
                 </p>
               </div>
               <SampleTag />
             </div>
             <div className="mt-5">
-              <TrendLine data={FORECAST} labels={FLABELS} forecastFrom={11} height={210}
-                color="var(--d1)" ariaLabel="Performance index rising, with a projected tail." />
+              <TrendLine data={HEADCOUNT} labels={MONTHS} height={190} color="var(--d1)"
+                ariaLabel="Headcount rising from fourteen to twenty over twelve months." />
             </div>
             <dl className="mt-5 grid grid-cols-3 gap-4 border-t border-white/10 pt-5">
-              {[
-                { k: 'Index today', v: 83, s: '' },
-                { k: 'Projected, 2 quarters', v: 89, s: '' },
-                { k: 'Teams above median', v: 12, s: '' },
-              ].map(m => (
+              {[{ k: 'Current headcount', v: 20 }, { k: 'Hires, 12 months', v: 7 },
+                { k: 'Exits, 12 months', v: 1 }].map(m => (
                 <div key={m.k}>
                   <dd className="tnum text-2xl font-800 leading-none text-white">
-                    <Counter to={m.v} suffix={m.s} />
+                    <Counter to={m.v} />
                   </dd>
-                  <dt className="t-micro mt-2 text-[var(--on-deep-2)]">{m.k}</dt>
+                  <dt className="t-micro mt-2 normal-case tracking-normal text-[var(--on-deep-2)]">{m.k}</dt>
                 </div>
               ))}
             </dl>
           </div>
 
-          {/* risk radar */}
-          <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="t-h4 text-white">Flight-risk radar</h3>
-              <WarningIcon size={19} weight="light" className="text-[var(--crit-deep)]" aria-hidden />
-            </div>
-            <ul className="mt-5 grid gap-3">
-              {RISKS.map((r, i) => {
-                const tone = r.score >= 75 ? 'var(--crit-deep)' : r.score >= 55 ? 'var(--warn-deep)' : 'var(--good-deep)';
-                const band = r.score >= 75 ? 'High' : r.score >= 55 ? 'Watch' : 'Stable';
-                return (
-                  <motion.li key={r.role}
-                    initial={reduced ? false : { opacity: 0, x: 18 }}
+          {/* register + audit */}
+          <div className="grid gap-5">
+            <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="t-h4 text-white">Compliance register</h3>
+                <ShieldCheckIcon size={19} weight="light" className="text-[var(--good-deep)]" aria-hidden />
+              </div>
+              <dl className="mt-4 grid gap-0">
+                {REGISTER.map((r, i) => (
+                  <motion.div key={r.k}
+                    initial={reduced ? false : { opacity: 0, x: 12 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, margin: '-12% 0px' }}
-                    transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}
-                    className="group rounded-[8px] border border-white/10 bg-[var(--surface-deep-2)] p-4
-                               transition-colors duration-300 hover:border-white/25">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-[14px] font-700 leading-snug text-white">{r.role}</p>
-                      {/* band is labelled, so the colour is never the only signal */}
-                      <span className="chip shrink-0" style={{ color: tone, background: `${tone}1F` }}>
-                        {band}
-                      </span>
-                    </div>
-                    <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                      <motion.div className="h-full rounded-full" style={{ background: tone }}
-                        initial={reduced ? false : { width: 0 }}
-                        whileInView={{ width: `${r.score}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.9, delay: 0.15 + i * 0.1, ease: EASE }} />
-                    </div>
-                    <p className="t-small mt-2.5 text-[var(--on-deep-2)]">{r.note}</p>
-                  </motion.li>
-                );
-              })}
-            </ul>
-            <p className="t-micro mt-5 flex items-center gap-2 text-[var(--on-deep-2)]">
-              <TrendUpIcon size={14} weight="bold" aria-hidden />
-              Scores are illustrative
-            </p>
+                    viewport={{ once: true, margin: '-10% 0px' }}
+                    transition={{ duration: 0.4, delay: i * 0.06, ease: EASE }}
+                    className="flex items-baseline justify-between gap-3 border-b border-white/8 py-2
+                               last:border-0">
+                    <dt className="text-[13px] text-[var(--on-deep-2)]">{r.k}</dt>
+                    <dd className="tnum text-[13px] font-800 text-white">{r.v}</dd>
+                  </motion.div>
+                ))}
+              </dl>
+              <p className="t-micro mt-3 normal-case tracking-normal text-[var(--on-deep-2)]">
+                A filing reference, not a substitute for the returns themselves.
+              </p>
+            </div>
+
+            <div className="rounded-[12px] border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="t-h4 text-white">Audit log</h3>
+                <ListChecksIcon size={19} weight="light" className="text-[var(--on-deep-3)]" aria-hidden />
+              </div>
+              <ul className="mt-4 grid gap-3">
+                {AUDIT.map(a => (
+                  <li key={a.what} className="border-l-2 border-white/15 pl-3">
+                    <p className="text-[13px] leading-snug text-white">
+                      <span className="font-700">{a.who}</span>{' '}
+                      <span className="text-[var(--on-deep-2)]">{a.did}</span>
+                    </p>
+                    <p className="t-micro mt-0.5 normal-case tracking-normal text-[var(--on-deep-2)]">
+                      {a.what} · {a.ago} ago
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>

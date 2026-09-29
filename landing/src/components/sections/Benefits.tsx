@@ -72,14 +72,16 @@ export default function Benefits() {
             </div>
           }>
             <h3 className="t-h3 text-balance text-ink">
-              The cycle stops being a fire drill
+              Month end stops being a reconstruction
             </h3>
             <p className="t-body-xl mt-4 max-w-[46ch] text-ink-2">
-              Inputs arrive as work happens instead of being gathered at the end,
-              so the appraisal window is a review rather than a reconstruction.
+              Attendance, leave and expenses land against the record as they happen,
+              so the payroll run reads what is already there instead of gathering it.
             </p>
             <ul className="mt-6 grid gap-3">
-              {['Reminders route themselves', 'Evidence is already attached', 'Nothing is retyped'].map(t => (
+              {['Punches arrive from device and browser',
+                'Leave already netted against its cap',
+                'Loss of pay applied in the same pass'].map(t => (
                 <li key={t} className="flex items-start gap-3 text-[15px] text-ink">
                   <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
                   {t}
@@ -95,22 +97,22 @@ export default function Benefits() {
               Filing stops depending on one person's spreadsheet
             </h3>
             <p className="t-body-xl mt-4 max-w-[46ch] text-ink-2">
-              Provident fund, state insurance, professional tax and TDS total up from
-              the payroll runs you actually processed, so the register reconciles by
-              construction.
+              Provident fund at 12% to the Rs 15,000 ceiling, state insurance to
+              Rs 21,000 gross, professional tax by state and a monthly TDS estimate,
+              all totalled from the runs you actually processed.
             </p>
           </Block>
 
           <Block media={
             <div className="grid grid-cols-2 gap-4">
               <div className="panel grid place-items-center p-6">
-                <Gauge value={94} label="Reviews closed on time" size={124} />
+                <Gauge value={100} label="Records scoped to a tenant" size={124} />
               </div>
               <div className="panel grid place-items-center p-6">
-                <Gauge value={100} label="Records with an audit trail" size={124} color="var(--c3)" />
+                <Gauge value={45} label="Permissions across 5 roles" size={124} color="var(--c2)" />
               </div>
               <div className="panel col-span-2 p-6">
-                <p className="t-micro text-ink-3">Rating spread between managers</p>
+                <p className="t-micro text-ink-3">Screens by module group</p>
                 <div className="mt-3 flex items-end gap-1" aria-hidden>
                   {[9,14,22,31,26,17,11,6].map((h, i) => (
                     <span key={i} className="w-full rounded-t-[3px] bg-brand-300"
@@ -118,18 +120,19 @@ export default function Benefits() {
                   ))}
                 </div>
                 <p className="t-small mt-3 text-ink-2">
-                  Calibration pulls the distribution back toward the centre.
+                  Thirty two screens across people, payroll, attendance, letters and
+                  organisation.
                 </p>
               </div>
             </div>
           }>
             <h3 className="t-h3 text-balance text-ink">
-              A rating you can defend in the room
+              One deployment, many companies
             </h3>
             <p className="t-body-xl mt-4 max-w-[46ch] text-ink-2">
-              Every score traces back to the record it came from, so when the board
-              asks how a number was reached, the answer is on screen rather than in
-              somebody's memory.
+              Every query is scoped to its tenant, with five seeded roles over forty
+              five permissions, so a group can run several companies off one install
+              without their records ever meeting.
             </p>
           </Block>
         </div>

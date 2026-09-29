@@ -7,7 +7,7 @@ const LINKS = [
   { label: 'Platform',   href: '#platform' },
   { label: 'How it works', href: '#journey' },
   { label: 'Product',    href: '#product' },
-  { label: 'Intelligence', href: '#intelligence' },
+  { label: 'Reporting',  href: '#reporting' },
 ];
 
 export default function Nav() {

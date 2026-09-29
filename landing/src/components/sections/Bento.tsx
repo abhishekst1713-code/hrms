@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion } from 'motion/react';
 import {
-  TargetIcon, TrendUpIcon, ClipboardTextIcon, ChartBarIcon,
-  LightningIcon, SparkleIcon, UsersThreeIcon, LockKeyIcon,
+  CurrencyInrIcon, CalendarBlankIcon, ClockIcon, FileTextIcon,
+  LightningIcon, SignOutIcon, LockKeyIcon, PlugsConnectedIcon,
 } from '@phosphor-icons/react';
 import { Eyebrow, Chip, RevealGroup } from '../primitives';
-import { BarRows, Sparkline, Heatmap } from '../charts';
+import { BarRows } from '../charts';
 import { revealUp } from '../../lib/motion';
 
 const Item = motion.article;
@@ -38,16 +38,10 @@ function Title({ icon: Icon, children }: { icon: React.ElementType; children: Re
   );
 }
 
-const CYCLES = [
-  { q: 'Q1 FY25', d: 21 }, { q: 'Q2 FY25', d: 18 }, { q: 'Q3 FY25', d: 16 },
-  { q: 'Q4 FY25', d: 14 }, { q: 'Q1 FY26', d: 11 }, { q: 'Q2 FY26', d: 9 },
-  { q: 'Q3 FY26', d: 8 },  { q: 'Q4 FY26', d: 6 },
-];
+const CHAIN = ['Manager approval', 'HR Head review', 'Finance sign-off', 'Director approval'];
 
 export default function Bento() {
-  const rm = useReducedMotion();
-  const [goal, setGoal] = useState(68);
-  const [cycle, setCycle] = useState(CYCLES.length - 1);
+  const [stages, setStages] = useState(2);
 
   return (
     <section id="platform" className="relative bg-surface-tint py-24 lg:py-32">
@@ -60,8 +54,9 @@ export default function Bento() {
             </h2>
           </div>
           <p className="t-body max-w-[42ch] text-ink-2">
-            Modules marked <span className="font-700 text-brand-700">Live</span> run in the product
-            today. The rest are on the delivery roadmap.
+            Every module below is running in the product today, across
+            <span className="font-700 text-ink"> 32 screens</span> and
+            <span className="font-700 text-ink"> 26 API modules</span>.
           </p>
         </div>
 
@@ -69,184 +64,197 @@ export default function Bento() {
           className="mt-12 grid auto-rows-[minmax(0,auto)] gap-4 lg:grid-cols-6"
           gap={0.06}>
 
-          {/* 1 — wide: goal cascading, interactive slider */}
-          <Cell className="lg:col-span-4">
-            <Title icon={TargetIcon}>Goal cascading</Title>
-            <p className="t-body mt-3 max-w-[46ch] text-ink-2">
-              A board objective splits into department targets and then into individual
-              goals, each one still pointing back at the original.
+          {/* 1 — payroll, the module with the hardest numbers */}
+          <Cell className="lg:col-span-4" live>
+            <Title icon={CurrencyInrIcon}>Payroll and statutory</Title>
+            <p className="t-body mt-3 max-w-[48ch] text-ink-2">
+              Provident fund, state insurance, professional tax and a monthly TDS
+              estimate, computed per run with loss of pay handled inside the same pass.
             </p>
-            <div className="mt-6 rounded-[8px] border border-hairline bg-surface-tint p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[13px] font-700 text-ink">Expand APAC share</p>
-                <span className="tnum text-[13px] font-800 text-brand-700">{goal}%</span>
-              </div>
-              <input type="range" min={0} max={100} value={goal}
-                     onChange={e => setGoal(+e.target.value)}
-                     aria-label="Cascade completion, sample control"
-                     className="mt-2 h-11 w-full cursor-pointer accent-[var(--brand-700)]" />
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {['Sales', 'Marketing', 'Delivery'].map((d, i) => {
-                  const v = Math.max(0, Math.min(100, goal + (i - 1) * 11));
-                  return (
-                    <div key={d} className="rounded-[8px] bg-surface p-2 ring-1 ring-hairline">
-                      <p className="t-micro text-ink-3">{d}</p>
-                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-brand-600 transition-[width] duration-300"
-                             style={{ width: `${v}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { k: 'PF', v: '12% + 12%', n: 'ceiling Rs 15,000' },
+                { k: 'ESI', v: '3.25% + 0.75%', n: 'gross up to Rs 21,000' },
+                { k: 'Prof. tax', v: '4 states', n: 'KA, MH, TG, GJ' },
+                { k: 'TDS', v: 'Monthly', n: 'annualised slabs' },
+              ].map(m => (
+                <div key={m.k} className="rounded-[8px] border border-hairline bg-surface-tint p-3">
+                  <dt className="t-micro text-ink-3">{m.k}</dt>
+                  <dd className="tnum mt-1 text-[15px] font-800 leading-tight text-ink">{m.v}</dd>
+                  <p className="t-micro mt-1 normal-case tracking-normal text-ink-3">{m.n}</p>
+                </div>
+              ))}
+            </dl>
           </Cell>
 
-          {/* 2 — tall: workforce analytics, real module */}
+          {/* 2 — leave, with the real cap logic */}
           <Cell className="lg:col-span-2 lg:row-span-2" live>
-            <Title icon={ChartBarIcon}>Workforce analytics</Title>
+            <Title icon={CalendarBlankIcon}>Leave with real caps</Title>
             <p className="t-body mt-3 text-ink-2">
-              Headcount, attrition and the statutory register, built from the payroll
-              runs you actually processed.
+              Eight built-in types and a monthly cap per employee category. Anything
+              past the cap becomes loss of pay inside the same request, before it is
+              submitted.
             </p>
             <div className="mt-6">
-              <BarRows suffix="" ariaLabel="Headcount by department"
+              <BarRows suffix="/mo" max={3} ariaLabel="Monthly leave cap by employee category"
                 rows={[
-                  { label: 'Human Resources', value: 4 },
-                  { label: 'Manufacturing',   value: 3, tone: 'var(--c2)' },
-                  { label: 'Finance',         value: 3, tone: 'var(--c3)' },
-                  { label: 'Logistics',       value: 3, tone: 'var(--c4)' },
-                  { label: 'Quality',         value: 2 },
+                  { label: 'Regular', value: 2 },
+                  { label: 'Probationary', value: 1, tone: 'var(--c2)' },
+                  { label: 'Female, plus ML', value: 3, tone: 'var(--c3)' },
                 ]} />
             </div>
-            <div className="mt-6 rounded-[8px] bg-surface-tint p-3 ring-1 ring-hairline">
-              <p className="t-micro text-ink-3">Current headcount</p>
-              <p className="tnum text-3xl font-800 leading-tight text-ink">20</p>
-            </div>
-          </Cell>
-
-          {/* 3 — heatmap */}
-          <Cell className="lg:col-span-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Title icon={TrendUpIcon}>Performance heatmap</Title>
-              <Chip tone="neutral">Roadmap</Chip>
-            </div>
-            <p className="t-body mt-3 max-w-[52ch] text-ink-2">
-              Every team against every quarter, so a dip shows up as a shape rather
-              than a number buried in a report.
-            </p>
-            <div className="mt-5">
-              <Heatmap
-                ariaLabel="Performance score by department and quarter"
-                rows={['Manufacturing', 'Finance', 'Logistics', 'Quality']}
-                cols={['Q1', 'Q2', 'Q3', 'Q4']}
-                values={[[72,78,81,88],[66,71,69,74],[58,61,55,71],[80,83,86,91]]} />
-            </div>
-          </Cell>
-
-          {/* 4 — reviews */}
-          <Cell className="lg:col-span-2">
-            <Title icon={ClipboardTextIcon}>Employee reviews</Title>
-            <p className="t-body mt-3 text-ink-2">
-              Multi-rater input collected against evidence, not recollection.
-            </p>
-            <ul className="mt-5 grid gap-2">
-              {[['Self', 100], ['Manager', 100], ['Peers', 66], ['Skip-level', 33]].map(([r, v]) => (
-                <li key={r as string} className="flex items-center gap-3">
-                  <span className="t-small w-20 shrink-0 text-ink-2">{r}</span>
-                  <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                    <span className="block h-full rounded-full bg-brand-600
-                                     transition-[width] duration-700 group-hover:opacity-90"
-                          style={{ width: `${v}%` }} />
-                  </span>
-                </li>
+            <ul className="mt-6 flex flex-wrap gap-1.5">
+              {['CL','SL','LP','ML','Maternity','OD','Comp off','Permission'].map(t => (
+                <li key={t} className="chip bg-surface-tint text-ink-2">{t}</li>
               ))}
             </ul>
           </Cell>
 
-          {/* 5 — appraisal automation, hover a bar to read the cycle */}
-          <Cell className="lg:col-span-2">
-            <Title icon={LightningIcon}>Appraisal automation</Title>
+          {/* 3 — attendance, two sources */}
+          <Cell className="lg:col-span-2" live>
+            <Title icon={ClockIcon}>Attendance, two sources</Title>
             <p className="t-body mt-3 text-ink-2">
-              Cycles open, chase and close themselves on the calendar you set.
+              An eSSL or ZKTeco device on the floor and a browser self-punch at the
+              desk write to the same punch log, then roll into one daily record.
             </p>
-            <div className="mt-5 flex items-end gap-1.5">
-              {CYCLES.map((c, i) => (
-                <motion.button key={c.q} type="button"
-                  onPointerEnter={() => setCycle(i)} onFocus={() => setCycle(i)}
-                  aria-label={`${c.q}: ${c.d} days`}
-                  className={`min-h-11 w-full rounded-t-[3px] transition-colors duration-200
-                    ${cycle === i ? 'bg-brand-500' : 'bg-brand-200 hover:bg-brand-300'}`}
-                  style={{ height: c.d * 4 }}
-                  initial={rm ? false : { scaleY: 0 }}
-                  whileInView={{ scaleY: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.05, ease: [0.22,1,0.36,1] }}
-                />
+            <div className="mt-5 grid gap-2">
+              {[
+                { s: 'Biometric device', n: 'eSSL / ZKTeco polling' },
+                { s: 'Web self-punch', n: 'browser check in and out' },
+              ].map(x => (
+                <div key={x.s} className="flex items-center gap-2.5 rounded-[8px]
+                                          border border-hairline bg-surface-tint p-2.5">
+                  <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" />
+                  <span className="min-w-0">
+                    <span className="block text-[13px] font-700 text-ink">{x.s}</span>
+                    <span className="block text-[11px] text-ink-3">{x.n}</span>
+                  </span>
+                </div>
               ))}
+              <p className="t-micro mt-1 text-ink-3">Both land in attendance_daily</p>
             </div>
-            <p className="t-micro mt-3 text-ink-3">
-              <span className="font-800 text-ink">{CYCLES[cycle].q}</span>
-              {' '}closed in{' '}
-              <span className="font-800 text-brand-700">{CYCLES[cycle].d} days</span>
-            </p>
           </Cell>
 
-          {/* 6 — AI insights */}
-          <Cell className="lg:col-span-2 bg-[linear-gradient(180deg,var(--surface)_0%,var(--brand-50)_100%)]">
-            <Title icon={SparkleIcon}>AI insights</Title>
+          {/* 4 — letters */}
+          <Cell className="lg:col-span-2" live>
+            <Title icon={FileTextIcon}>Letters from your templates</Title>
             <p className="t-body mt-3 text-ink-2">
-              Patterns surfaced from your own history, with the reasoning shown.
-            </p>
-            <div className="mt-5 rounded-[8px] border border-hairline-blue bg-surface p-3">
-              <p className="t-micro text-brand-700">Forecast</p>
-              <p className="mt-1.5 text-[13px] font-600 leading-snug text-ink">
-                Logistics is tracking 21 points under the median for a third quarter.
-              </p>
-              <Sparkline data={[71, 66, 61, 58, 55, 52]} color="var(--crit)" w={150} h={30} />
-            </div>
-          </Cell>
-
-          {/* 7 — lifecycle, real module */}
-          <Cell className="lg:col-span-3" live>
-            <Title icon={UsersThreeIcon}>Employee lifecycle</Title>
-            <p className="t-body mt-3 max-w-[46ch] text-ink-2">
-              Offer letter, appointment order, joining, transfers and relieving, all on
-              one record with the documents generated from your own templates.
+              Offer letters are versioned, with new and revised subtypes, alongside
+              appointment orders, relieving and experience letters.
             </p>
             <ol className="mt-5 flex flex-wrap items-center gap-1.5">
-              {['Offer', 'Appointment', 'Joined', 'Active', 'Exit'].map((s, i) => (
-                <li key={s} className="flex items-center gap-1.5">
-                  <span className={`chip ${i < 4
-                    ? 'bg-[color-mix(in_srgb,var(--brand)_12%,transparent)] text-brand-700'
-                    : 'bg-slate-100 text-ink-3'}`}>{s}</span>
-                  {i < 4 && <span aria-hidden className="h-px w-3 bg-hairline" />}
-                </li>
+              {['Offer', 'Appointment', 'Relieving', 'Experience'].map(t => (
+                <li key={t} className="chip bg-brand-50 text-brand-700">{t}</li>
               ))}
             </ol>
           </Cell>
 
-          {/* 8 — RBAC, real module */}
-          <Cell className="lg:col-span-3" live>
-            <Title icon={LockKeyIcon}>Role-based access</Title>
-            <p className="t-body mt-3 max-w-[46ch] text-ink-2">
-              Each tenant carries its own admins, roles and indexes. Staff in one
-              company never see another company's records.
+          {/* 5 — approval workflows, interactive */}
+          <Cell className="lg:col-span-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Title icon={LightningIcon}>Configurable approval chains</Title>
+              <Chip tone="brand">Live</Chip>
+            </div>
+            <p className="t-body mt-3 max-w-[52ch] text-ink-2">
+              Each document type carries its own ordered stages, with the approving
+              role and the self-approval rule set per stage. Drag the control to see
+              a chain lengthen.
             </p>
-            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {['Admin', 'HR head', 'Manager', 'Employee'].map((r, i) => (
+            <div className="mt-5 rounded-[8px] border border-hairline bg-surface-tint p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[13px] font-700 text-ink">Stages in the chain</p>
+                <span className="tnum text-[13px] font-800 text-brand-700">{stages}</span>
+              </div>
+              <input type="range" min={1} max={4} value={stages}
+                     onChange={e => setStages(+e.target.value)}
+                     aria-label="Number of approval stages, sample control"
+                     className="mt-2 h-11 w-full cursor-pointer accent-[var(--blue-500)]" />
+              <ol className="mt-2 flex flex-wrap items-center gap-1.5">
+                {CHAIN.slice(0, stages).map((st, i) => (
+                  <li key={st} className="flex items-center gap-1.5">
+                    <span className="chip bg-surface text-ink ring-1 ring-hairline">{st}</span>
+                    {i < stages - 1 && <span aria-hidden className="h-px w-3 bg-hairline" />}
+                  </li>
+                ))}
+                <li className="flex items-center gap-1.5">
+                  <span aria-hidden className="h-px w-3 bg-hairline" />
+                  <span className="chip bg-[color-mix(in_srgb,var(--good)_12%,transparent)]
+                                   text-[var(--good)]">Approved</span>
+                </li>
+              </ol>
+            </div>
+          </Cell>
+
+          {/* 6 — exit pipeline */}
+          <Cell className="lg:col-span-3" live>
+            <Title icon={SignOutIcon}>Exit and clearance</Title>
+            <p className="t-body mt-3 max-w-[46ch] text-ink-2">
+              Five stages from resignation to exited, with five clearances ticked off
+              before the relieving letter is released.
+            </p>
+            <ol className="mt-5 flex flex-wrap items-center gap-1.5">
+              {['Resignation','Notice','Clearance','Cleared','Exited'].map((st, i) => (
+                <li key={st} className="flex items-center gap-1.5">
+                  <span className="chip bg-surface-tint text-ink-2">{st}</span>
+                  {i < 4 && <span aria-hidden className="h-px w-2.5 bg-hairline" />}
+                </li>
+              ))}
+            </ol>
+            <p className="t-micro mt-3 normal-case tracking-normal text-ink-3">
+              IT assets, finance, admin, HR documents and access cards
+            </p>
+          </Cell>
+
+          {/* 7 — access and tenancy */}
+          <Cell className="lg:col-span-3" live>
+            <Title icon={LockKeyIcon}>Roles, permissions and tenancy</Title>
+            <p className="t-body mt-3 max-w-[46ch] text-ink-2">
+              Five seeded roles over forty five permissions, and every query scoped to
+              its tenant, so one deployment serves many companies.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {['Admin', 'HR Head', 'HR', 'Manager', 'Employee'].map((r, i) => (
                 <div key={r}
                      className="rounded-[8px] border border-hairline bg-surface-tint p-2.5
-                                transition-colors duration-200 hover:border-brand-600">
-                  <p className="t-micro text-ink-3">{r}</p>
+                                transition-colors duration-200 hover:border-brand-400">
+                  <p className="t-micro truncate normal-case tracking-normal text-ink-3">{r}</p>
                   <div className="mt-2 flex gap-0.5" aria-hidden>
-                    {Array.from({ length: 4 }).map((_, k) => (
+                    {Array.from({ length: 5 }).map((_, k) => (
                       <span key={k} className={`h-1 flex-1 rounded-full
-                        ${k <= 3 - i ? 'bg-brand-600' : 'bg-slate-200'}`} />
+                        ${k <= 4 - i ? 'bg-brand-500' : 'bg-slate-200'}`} />
                     ))}
                   </div>
                 </div>
               ))}
+            </div>
+          </Cell>
+
+          {/* 8 — integrations */}
+          <Cell className="lg:col-span-6" live>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:items-center">
+              <div>
+                <Title icon={PlugsConnectedIcon}>API, webhooks and audit</Title>
+                <p className="t-body mt-3 max-w-[44ch] text-ink-2">
+                  Per-tenant API keys, a read API for your other systems, outbound
+                  events, and an audit log behind it all.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {[
+                  { h: 'Read API', l: ['GET /employees', 'GET /attendance', 'GET /calendar.ics'] },
+                  { h: 'Webhooks', l: ['employee.exited', 'expense.approved'] },
+                  { h: 'At rest', l: ['KYC uploads encrypted', 'Aadhaar, PAN, passbook', 'Audit log'] },
+                ].map(g => (
+                  <div key={g.h} className="rounded-[8px] border border-hairline bg-surface-tint p-3">
+                    <p className="t-micro text-ink-3">{g.h}</p>
+                    <ul className="mt-2 grid gap-1">
+                      {g.l.map(x => (
+                        <li key={x} className="text-[12px] leading-snug text-ink">{x}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </div>
           </Cell>
         </RevealGroup>

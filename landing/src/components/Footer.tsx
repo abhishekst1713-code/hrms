@@ -3,13 +3,13 @@ const COLUMNS = [
     { label: 'Modules', href: '#platform' },
     { label: 'How it works', href: '#journey' },
     { label: 'The product', href: '#product' },
-    { label: 'Intelligence', href: '#intelligence' },
+    { label: 'Reporting', href: '#reporting' },
   ]},
-  { title: 'Live today', links: [
-    { label: 'Employee records', href: '#product' },
-    { label: 'Leave and approvals', href: '#product' },
-    { label: 'Attendance', href: '#product' },
-    { label: 'Payroll and payslips', href: '#product' },
+  { title: 'Modules', links: [
+    { label: 'Payroll and statutory', href: '#platform' },
+    { label: 'Leave and attendance', href: '#platform' },
+    { label: 'Letters and templates', href: '#platform' },
+    { label: 'API, webhooks and audit', href: '#platform' },
   ]},
   { title: 'Company', links: [
     { label: 'Infopace Management', href: 'https://www.infopaceindia.com' },

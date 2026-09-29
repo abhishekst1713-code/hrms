@@ -2,10 +2,11 @@ import { ArrowRightIcon, PlayCircleIcon } from '@phosphor-icons/react';
 import HeroDashboard from './HeroDashboard';
 import { Counter } from '../primitives';
 
+/* Counted from the codebase: App.jsx routes, backend/routes, permissions.py */
 const PROOF = [
-  { v: 1999, label: 'Operating since', raw: true },
-  { v: 25,   label: 'Years of change management', suffix: '+' },
-  { v: 18,   label: 'Sectors served', suffix: '' },
+  { v: 32, label: 'Screens in the product' },
+  { v: 26, label: 'API modules' },
+  { v: 45, label: 'Permissions across 5 roles' },
 ];
 
 export default function Hero() {
@@ -32,8 +33,8 @@ export default function Hero() {
             </h1>
 
             <p className="rise rise-3 t-body-xl mt-6 max-w-[54ch] text-ink-2">
-              One system for records, attendance, leave and payroll, with the
-              performance and governance layer your board actually asks for.
+              Employee records, attendance, leave, payroll and letters on one
+              record, with the statutory maths and the approval chain built in.
             </p>
 
             <div className="rise rise-4 mt-9 flex flex-wrap items-center gap-3">
@@ -61,7 +62,7 @@ export default function Hero() {
                 <div key={p.label}>
                   <dt className="sr-only">{p.label}</dt>
                   <dd className="tnum text-2xl font-800 leading-none text-ink">
-                    {p.raw ? p.v : <Counter to={p.v} suffix={p.suffix} />}
+                    <Counter to={p.v} />
                   </dd>
                   <p className="t-micro mt-2 leading-snug text-ink-3">{p.label}</p>
                 </div>
