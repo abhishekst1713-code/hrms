@@ -130,8 +130,8 @@ export default function FinalCta() {
                     <p className="text-[15px] font-700 text-white">Request received</p>
                     <p className="t-small mt-1 text-[var(--on-deep-2)]">
                       {confirmed
-                        ? 'We have sent a confirmation to your inbox. Someone will reply to arrange a time.'
-                        : 'We have your address and someone will reply to arrange a time.'}
+                        ? 'A confirmation is on its way to your inbox. Our team will be in touch shortly to arrange your walkthrough.'
+                        : 'Thank you for your interest. Our team will be in touch shortly to arrange your walkthrough.'}
                     </p>
                     <button type="button" onClick={() => setState('idle')}
                       className="mt-3 inline-flex min-h-11 items-center text-[13px] font-700
