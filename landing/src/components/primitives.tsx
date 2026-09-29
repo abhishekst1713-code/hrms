@@ -149,12 +149,5 @@ export function Chip({ children, tone = 'brand' }: { children: ReactNode; tone?:
 }
 
 /** Marks content that is illustrative, so sample data never reads as a real claim. */
-export function SampleTag({ className = '' }: { className?: string }) {
-  return (
-    <span className={`t-micro rounded-full bg-slate-100 px-2 py-0.5 text-ink-3 ring-1 ring-hairline ${className}`}>
-      Sample data
-    </span>
-  );
-}
 
 export const transitionEase = EASE;

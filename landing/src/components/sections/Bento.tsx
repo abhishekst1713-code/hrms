@@ -56,14 +56,14 @@ export default function Bento() {
   return (
     <section id="platform" className="relative bg-surface-tint py-24 lg:py-32">
       <div className="rail">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div className="max-w-[54ch]">
-            <Eyebrow>The platform</Eyebrow>
-            <h2 className="t-h2 mt-4 text-balance text-ink">
-              Seven modules on one employee record
-            </h2>
-          </div>
-          <p className="t-body max-w-[42ch] text-ink-2">
+        {/* Stacked, not split: the two-column header pushed the paragraph to the
+            far right and left a wide dead band between them. */}
+        <div className="max-w-[62ch]">
+          <Eyebrow>The platform</Eyebrow>
+          <h2 className="t-hero mt-4 text-balance text-ink">
+            Seven modules on one employee record
+          </h2>
+          <p className="t-body-xl mt-5 max-w-[58ch] text-ink-2">
             Every module below is running in the product today, and they share
             <span className="font-700 text-ink"> one employee record</span> —
             so payroll reads the same attendance your managers approved.
@@ -75,7 +75,7 @@ export default function Bento() {
           gap={0.06}>
 
           {/* 1 — payroll, the module with the hardest numbers */}
-          <Cell className="lg:col-span-4" live>
+          <Cell className="lg:col-span-3" live>
             <Title icon={CurrencyInrIcon}>Payroll and statutory</Title>
             <p className="t-body mt-3 max-w-[48ch] text-ink-2">
               Provident fund, state insurance, professional tax and a monthly TDS
@@ -95,10 +95,13 @@ export default function Bento() {
                 </div>
               ))}
             </dl>
+            <p className="t-micro mt-4 text-ink-3">
+              Loss of pay is applied in the same run, not corrected afterwards
+            </p>
           </Cell>
 
           {/* 2 — leave, with the real cap logic */}
-          <Cell className="lg:col-span-2" live>
+          <Cell className="lg:col-span-3" live>
             <Title icon={CalendarBlankIcon}>Leave with real caps</Title>
             <p className="t-body mt-3 text-ink-2">
               Eight built-in types and a monthly cap per employee category. Anything
@@ -110,7 +113,7 @@ export default function Bento() {
                 rows={[
                   { label: 'Regular', value: 2 },
                   { label: 'Probationary', value: 1, tone: 'var(--c2)' },
-                  { label: 'Female, plus ML', value: 3, tone: 'var(--c3)' },
+                  { label: 'Women employees', value: 3, tone: 'var(--c3)' },
                 ]} />
             </div>
             <ul className="mt-6 flex flex-wrap gap-1.5">
@@ -121,7 +124,7 @@ export default function Bento() {
           </Cell>
 
           {/* 3 — attendance, two sources */}
-          <Cell className="lg:col-span-2" live>
+          <Cell className="lg:col-span-3" live>
             <Title icon={ClockIcon}>Attendance, two sources</Title>
             <p className="t-body mt-3 text-ink-2">
               An eSSL or ZKTeco device on the floor and a browser self-punch at the
@@ -141,12 +144,12 @@ export default function Bento() {
                   </span>
                 </div>
               ))}
-              <p className="t-micro mt-1 text-ink-3">Both land in attendance_daily</p>
+              <p className="t-micro mt-1 text-ink-3">Both roll into one daily record</p>
             </div>
           </Cell>
 
           {/* 4 — letters */}
-          <Cell className="lg:col-span-4" live>
+          <Cell className="lg:col-span-3" live>
             <Title icon={FileTextIcon}>Letters from your templates</Title>
             <p className="t-body mt-3 text-ink-2">
               Offer letters are versioned, with new and revised subtypes, alongside
@@ -157,6 +160,30 @@ export default function Bento() {
                 <li key={t} className="chip bg-brand-50 text-brand-700">{t}</li>
               ))}
             </ol>
+
+            <div className="mt-5 rounded-[8px] border border-hairline bg-surface-tint p-3">
+              <p className="t-micro text-ink-3">One offer, revised twice</p>
+              <ol className="mt-2.5 grid gap-1.5">
+                {[
+                  { v: 'v1', t: 'Issued', note: 'sent to candidate' },
+                  { v: 'v2', t: 'Revised', note: 'salary renegotiated' },
+                  { v: 'v3', t: 'Current', note: 'joining date moved' },
+                ].map((r, i, a) => (
+                  <li key={r.v} className="flex items-center gap-2.5 text-[13px]">
+                    <span className={`tnum grid h-6 w-7 shrink-0 place-items-center rounded-[6px]
+                                      text-[11px] font-800
+                                      ${i === a.length - 1
+                                        ? 'bg-brand-700 text-white'
+                                        : 'bg-surface text-ink-3 ring-1 ring-[var(--border)]'}`}>
+                      {r.v}
+                    </span>
+                    <span className="font-600 text-ink">{r.t}</span>
+                    <span className="t-micro truncate text-ink-3">{r.note}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="t-micro mt-2.5 text-ink-3">Earlier versions stay readable.</p>
+            </div>
           </Cell>
 
           {/* 5 — approval workflows, interactive */}
@@ -219,7 +246,7 @@ export default function Bento() {
           <Cell className="lg:col-span-3" live>
             <Title icon={LockKeyIcon}>Roles, permissions and tenancy</Title>
             <p className="t-body mt-3 max-w-[46ch] text-ink-2">
-              Five seeded roles over forty five permissions, and every query scoped to
+              Five seeded roles over 45 permissions, and every query scoped to
               its tenant, so one deployment serves many companies.
             </p>
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">

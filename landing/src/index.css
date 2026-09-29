@@ -305,7 +305,14 @@
   6%, 23%   { opacity: 1; transform: translateY(0); }
   29%, 100% { opacity: 0; transform: translateY(-0.3em); }
 }
-.wordcycle { display: inline-grid; vertical-align: bottom; }
+.wordcycle {
+  /* Its own line, sized to the widest word. Earlier this was inline-grid, which
+     reserved the widest word's width mid-sentence and left a visible hole after
+     a short one ("Unify___HR"). On its own line there is nothing after it to
+     push, so the words can differ in width and still cost no layout shift. */
+  display: grid;
+  width: max-content;
+}
 .wordcycle > span {
   grid-area: 1 / 1;
   opacity: 0;

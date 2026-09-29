@@ -1,21 +1,12 @@
 import { ArrowRightIcon, PlayCircleIcon } from '@phosphor-icons/react';
 import HeroDashboard from './HeroDashboard';
-import { Counter } from '../primitives';
-
-/* What an HR team actually weighs up, all counted from the codebase:
-   payroll_engine.py, routes/leaves.py, permissions.py. */
-const PROOF = [
-  { v: 4,  label: 'Statutory heads: PF, ESI, PT, TDS' },
-  { v: 8,  label: 'Leave types, with monthly caps' },
-  { v: 45, label: 'Permissions across 5 roles' },
-];
 
 /* The cycling word. Kept to a similar length so the stacked cell stays tight. */
 const VERBS = ['Transform', 'Automate', 'Simplify', 'Unify'];
 
 export default function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden pt-28 pb-20 lg:pt-32 lg:pb-28">
+    <section id="top" className="relative overflow-hidden pt-20 pb-20 lg:pt-24 lg:pb-28">
       {/* Zoning wash, not a SaaS gradient: a flat blue tint bounded by a hairline. */}
       <div aria-hidden className="absolute inset-0 bg-surface-tint" />
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-hairline-blue" />
@@ -68,19 +59,6 @@ export default function Hero() {
               </a>
             </div>
 
-            {/* proof strip: real, verifiable company facts only */}
-            <dl className="rise rise-5 mt-12 grid max-w-md grid-cols-3 gap-6
-                        border-t border-hairline pt-6">
-              {PROOF.map(p => (
-                <div key={p.label}>
-                  <dt className="sr-only">{p.label}</dt>
-                  <dd className="tnum text-2xl font-800 leading-none text-ink">
-                    <Counter to={p.v} />
-                  </dd>
-                  <p className="t-micro mt-2 leading-snug text-ink-3">{p.label}</p>
-                </div>
-              ))}
-            </dl>
           </div>
 
           {/* ---- right: the live console ---- */}

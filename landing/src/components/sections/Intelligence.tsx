@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
 import { ShieldCheckIcon, ListChecksIcon, ChartLineUpIcon } from '@phosphor-icons/react';
 import { TrendLine } from '../charts';
-import { Counter, SampleTag } from '../primitives';
+import { Counter } from '../primitives';
 import { EASE } from '../../lib/motion';
 
 const HEADCOUNT = [14, 15, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20];
@@ -69,7 +69,6 @@ export default function Intelligence() {
               <div>
                 <h3 className="t-h4 text-white">Headcount, twelve months</h3>
               </div>
-              <SampleTag />
             </div>
             <div className="mt-5">
               <TrendLine data={HEADCOUNT} labels={MONTHS} height={190} color="var(--d1)" trace
