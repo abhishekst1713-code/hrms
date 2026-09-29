@@ -2269,10 +2269,6 @@ function LetterCard({ letter, onView }) {
 export default function LettersPage() {
   const { user } = useAuth();
 
-  if (user?.role === 'employee' || user?.role === 'manager') {
-    return <EmployeeLettersView />;
-  }
-
   const [letters, setLetters] = useState([]);
   const [employees, setEmps] = useState([]);
   const [templates, setTmpls] = useState([]);
@@ -2294,6 +2290,7 @@ export default function LettersPage() {
 
   const canDelete = DELETE_ROLES.has(user?.role);
   const isHRHead = HRHEAD_ROLES.has(user?.role);
+  const isEmployeeOrManager = user?.role === 'employee' || user?.role === 'manager';
 
   const load = useCallback(() => {
     setLoading(true);
@@ -2311,6 +2308,10 @@ export default function LettersPage() {
     axios.get('/api/employees/?show_all=true').then(r => setEmps(r.data)).catch(() => { });
     axios.get('/api/templates/?type=offer').then(r => setTmpls(r.data.filter(t => t.is_active))).catch(() => { });
   }, []);
+
+  if (isEmployeeOrManager) {
+    return <EmployeeLettersView />;
+  }
 
   const notify = (msg) => { setSuccess(msg); setTimeout(() => setSuccess(''), 6000); };
   const onDone = (msg) => { setShowNew(false); setShowRev(false); load(); notify(msg); };

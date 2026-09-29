@@ -864,7 +864,7 @@ function EditResubmitModal({ order, onClose, onDone }) {
             <div style={{ background: 'rgba(63,207,142,.07)', border: '1px solid rgba(63,207,142,.2)', borderRadius: 8, padding: '10px 16px', marginBottom: 20, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span>✓</span><span>All fields updated. Review before resubmitting to HR.</span>
             </div>
-            <TemplatePreview templateId={selTpl._id} fields={fields} />
+            {order?.template_id ? <TemplatePreview templateId={order.template_id} fields={fields} /> : <div className="alert alert-warning">Template preview is unavailable for this draft.</div>}
             <div style={{ background: 'rgba(99,102,241,.07)', border: '1px solid rgba(99,102,241,.2)', borderRadius: 8, padding: '12px 16px', margin: '20px 0', fontSize: 13 }}>
               <strong>📤 Resubmit to HR Head</strong>
               <div style={{ marginTop: 4, color: 'var(--text-dim)' }}>This will send your updated appointment order back to HR Head for review.</div>

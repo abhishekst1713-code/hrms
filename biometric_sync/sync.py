@@ -33,6 +33,9 @@ def run_sync_cycle():
         last_synced = db.get_last_punch_datetime(conn)
 
         raw_records = device.fetch_attendance(since=last_synced)
+        if raw_records is None:
+            print("[sync] Device unavailable; no records were synced. Retrying next cycle.")
+            return
         if not raw_records:
             print("[sync] No new punches this cycle.")
             return

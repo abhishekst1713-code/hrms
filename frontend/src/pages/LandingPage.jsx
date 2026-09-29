@@ -141,40 +141,9 @@ function scrollToId(id) {
 /* ── Page ──────────────────────────────────────────────────── */
 export default function LandingPage() {
   const rootRef = useRef(null);
-  const heroRef = useRef(null);
   const layerRefs = useRef([]);
   const [stuck, setStuck] = useState(false);
   const [layer, setLayer] = useState(1);
-
-  /* subtle pointer parallax on the hero photograph */
-  useEffect(() => {
-    const el = heroRef.current;
-    let raf = 0;
-
-    const onMove = (e) => {
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      const y = (e.clientY - r.top) / r.height;
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        el.style.setProperty('--px', ((x - 0.5) * 2).toFixed(3));
-        el.style.setProperty('--py', ((y - 0.5) * 2).toFixed(3));
-      });
-    };
-
-    const onLeave = () => {
-      el.style.setProperty('--px', '0');
-      el.style.setProperty('--py', '0');
-    };
-
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerleave', onLeave);
-    return () => {
-      cancelAnimationFrame(raf);
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerleave', onLeave);
-    };
-  }, []);
 
   /* scroll reveals */
   useEffect(() => {
@@ -251,31 +220,40 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ── */}
-      <header className="lp-hero" ref={heroRef}>
+      <header className="lp-hero">
         <div className="lp-hero-split">
           <div className="lp-hero-copy">
-            <span className="lp-tag" data-reveal>Infopace HR Automation</span>
+            <span className="lp-tag" data-reveal>Infopace HR platform</span>
 
             <h1 className="lp-h1" data-reveal style={{ '--d': '80ms' }}>
-              Every HR process, on <span className="lp-grad">one employee record</span>
+              Run the complete employee lifecycle from one place.
             </h1>
 
             <p className="lp-hero-sub" data-reveal style={{ '--d': '160ms' }}>
-              Letters, onboarding, attendance, leave, payroll, expenses and exits all run off the
-              same record. Provident fund, ESI, professional tax and TDS are computed on every
-              run, not configured by hand.
+              One employee record powers onboarding, attendance, leave, payroll, approvals, documents,
+              compliance and exits without the usual spreadsheet and email sprawl.
             </p>
 
             <div className="lp-hero-actions" data-reveal style={{ '--d': '240ms' }}>
               <button className="lp-btn lp-btn-primary lp-btn-lg" onClick={goToLogin}>
-                Sign in to your workspace <Icon name="arrow" size={16} className="lp-arrow" />
+                Sign in to workspace <Icon name="arrow" size={16} className="lp-arrow" />
               </button>
               <button className="lp-btn lp-btn-outline lp-btn-lg" onClick={() => scrollToId('modules')}>
-                See what it covers
+                Explore the platform
               </button>
             </div>
 
-            <div className="lp-hero-facts" data-reveal style={{ '--d': '320ms' }}>
+            <div className="lp-trust" data-reveal style={{ '--d': '320ms' }}>
+              <span className="lp-trust-label">Built for</span>
+              <div className="lp-trust-items">
+                <span>Onboarding</span>
+                <span>Attendance</span>
+                <span>Payroll</span>
+                <span>Compliance</span>
+              </div>
+            </div>
+
+            <div className="lp-hero-facts" data-reveal style={{ '--d': '360ms' }}>
               {HERO_FACTS.map((f) => (
                 <span className="lp-hero-fact" key={f.label}>
                   <Icon name={f.icon} size={15} />
@@ -285,16 +263,59 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <figure className="lp-hero-figure" data-reveal style={{ '--d': '200ms' }}>
-            <img
-              src="/img/hero-office.webp"
-              alt="Two colleagues reviewing work together on a laptop in an office"
-              width="2048"
-              height="1360"
-              loading="eager"
-              decoding="async"
-            />
-          </figure>
+          <div className="lp-hero-panel" data-reveal style={{ '--d': '200ms' }}>
+            <div className="lp-panel-topbar">
+              <div className="lp-window-dots">
+                <span />
+                <span />
+                <span />
+              </div>
+              <span className="lp-panel-status">Live overview</span>
+            </div>
+
+            <div className="lp-panel-metrics">
+              <div className="lp-mini-stat">
+                <span className="lp-mini-label">Employees</span>
+                <strong>1,403</strong>
+              </div>
+              <div className="lp-mini-stat accent">
+                <span className="lp-mini-label">Payroll</span>
+                <strong>₹ 24.8L</strong>
+              </div>
+            </div>
+
+            <div className="lp-panel-card">
+              <div className="lp-panel-card-head">
+                <span>Today</span>
+                <span className="lp-pill-tag">HR</span>
+              </div>
+
+              <div className="lp-panel-figure">
+                <div className="lp-ring">
+                  <span>92%</span>
+                </div>
+                <div className="lp-ring-copy">
+                  <strong>Process coverage</strong>
+                  <small>Across lifecycle workflows</small>
+                </div>
+              </div>
+
+              <div className="lp-panel-list">
+                <div>
+                  <span>Pending approvals</span>
+                  <strong>18</strong>
+                </div>
+                <div>
+                  <span>New joiners</span>
+                  <strong>12</strong>
+                </div>
+                <div>
+                  <span>Documents ready</span>
+                  <strong>9</strong>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* module strip */}

@@ -9,6 +9,9 @@
     "react-router-dom": "^6.21.0",
     "react-scripts": "^5.0.1"
   },
+  "devDependencies": {
+    "eslint-plugin-react-hooks": "^4.3.0"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build"

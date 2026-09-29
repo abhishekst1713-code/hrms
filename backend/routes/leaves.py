@@ -983,4 +983,5 @@ def delete_type(type_id):
         return jsonify({'error': 'This leave type has existing requests — deactivate it instead of deleting'}), 400
 
     db.leave_types.delete_one({'_id': oid})
-    return jsonify({'message': 'Leave type deleted'})
+    return jsonify({'message': 'Leave type deleted'})    $env:DEVICE_IP="correct-device-ip"
+    python sync.py

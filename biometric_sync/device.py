@@ -14,10 +14,15 @@ def fetch_attendance(since=None):
     newer than `since` (a datetime, or None to return everything — used on
     the very first run when the table is empty).
 
-    Returns an empty list (and prints the error) if the device is unreachable
-    so the sync loop can just try again on the next cycle instead of crashing.
+    Returns None (and prints the error) if the device is unreachable so the
+    sync loop can distinguish a connection failure from zero new records.
     """
-    zk = ZK(config.DEVICE_IP, port=config.DEVICE_PORT, timeout=config.DEVICE_TIMEOUT)
+    zk = ZK(
+        config.DEVICE_IP,
+        port=config.DEVICE_PORT,
+        timeout=config.DEVICE_TIMEOUT,
+        ommit_ping=True,
+    )
     conn = None
     records = []
 
@@ -44,6 +49,7 @@ def fetch_attendance(since=None):
 
     except Exception as e:
         print(f"[device] ERROR: could not fetch attendance: {e}")
+        return None
 
     finally:
         if conn:
