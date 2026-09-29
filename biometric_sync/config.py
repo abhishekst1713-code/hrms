@@ -8,7 +8,7 @@ import os
 # ---------------- eSSL / ZKTeco Device ----------------
 DEVICE_IP = os.getenv("DEVICE_IP", "192.168.0.4")
 DEVICE_PORT = int(os.getenv("DEVICE_PORT", "4370"))
-DEVICE_TIMEOUT = 10  # seconds
+DEVICE_TIMEOUT = int(os.getenv("DEVICE_TIMEOUT", "10"))  # seconds
 
 # ---------------- MySQL ----------------
 MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")

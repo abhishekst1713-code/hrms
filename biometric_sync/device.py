@@ -25,11 +25,14 @@ def fetch_attendance(since=None):
     )
     conn = None
     records = []
+    stage = "connect"
 
     try:
         conn = zk.connect()
+        stage = "disable device"
         conn.disable_device()  # pause device briefly so reads are consistent
 
+        stage = "read attendance"
         attendance = conn.get_attendance()
         for entry in attendance:
             if since is not None and entry.timestamp <= since:
@@ -48,12 +51,18 @@ def fetch_attendance(since=None):
             print(f"[device] First run — fetched all {len(records)} record(s) from device.")
 
     except Exception as e:
-        print(f"[device] ERROR: could not fetch attendance: {e}")
+        print(f"[device] ERROR during {stage} at {config.DEVICE_IP}:{config.DEVICE_PORT}: {e}")
         return None
 
     finally:
         if conn:
-            conn.enable_device()
-            conn.disconnect()
+            try:
+                conn.enable_device()
+            except Exception as e:
+                print(f"[device] WARNING: could not re-enable device: {e}")
+            try:
+                conn.disconnect()
+            except Exception as e:
+                print(f"[device] WARNING: could not disconnect cleanly: {e}")
 
     return records
