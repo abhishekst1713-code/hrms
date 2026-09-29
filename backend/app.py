@@ -23,18 +23,33 @@ register_request_hooks(app)
 # website read another tenant's API responses via the browser. Set
 # ALLOWED_ORIGINS in .env as a comma-separated list, e.g.
 #   ALLOWED_ORIGINS=https://app.example.com,http://localhost:3000
+_IS_PRODUCTION = os.getenv('FLASK_ENV') == 'production'
+
+# The local dev servers: 3000 is the in-app React frontend, 5173 and 4173 are
+# the marketing site's Vite dev and preview servers, which POST to
+# /api/demo-requests.
+_DEV_ORIGINS = ['http://localhost:3000',
+                'http://localhost:5173',
+                'http://localhost:4173',
+                'http://127.0.0.1:3000',
+                'http://127.0.0.1:5173',
+                'http://127.0.0.1:4173']
+
 _allowed_origins_env = os.getenv('ALLOWED_ORIGINS', '')
 ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(',') if o.strip()]
-if not ALLOWED_ORIGINS:
-    # Local dev default only — production deployments must set ALLOWED_ORIGINS.
-    # 3000 is the in-app React frontend; 5173/4173 are the marketing site's
-    # Vite dev and preview servers, which POST to /api/demo-requests.
-    ALLOWED_ORIGINS = ['http://localhost:3000',
-                       'http://localhost:5173',
-                       'http://localhost:4173']
-    if os.getenv('FLASK_ENV') == 'production':
+
+if _IS_PRODUCTION:
+    if not ALLOWED_ORIGINS:
         print('[app.py] FATAL: ALLOWED_ORIGINS must be set in production (comma-separated origins).', flush=True)
         sys.exit(1)
+else:
+    # Outside production the dev origins are ADDED to whatever .env configures,
+    # rather than replaced by it. A .env carrying only localhost:3000 (the usual
+    # case, written before the marketing site existed) otherwise silently breaks
+    # that site's demo form with a CORS preflight failure, which reads as "the
+    # server is down" in the browser. Production is untouched: the allow-list
+    # there is exactly what ALLOWED_ORIGINS says.
+    ALLOWED_ORIGINS += [o for o in _DEV_ORIGINS if o not in ALLOWED_ORIGINS]
 
 CORS(app,
      resources={r"/api/*": {"origins": ALLOWED_ORIGINS}},
