@@ -14,6 +14,7 @@ tenant_id that does not exist for a lead.
 import logging
 import os
 import re
+import threading
 from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
@@ -130,31 +131,37 @@ def create_demo_request():
     is_new = result.upserted_id is not None
     log.info('demo request stored (%s): %s', 'new' if is_new else 'repeat', email)
 
-    # Email must never decide whether the lead was captured. send_email
-    # already swallows and logs its own failures, so a dead SMTP host
-    # cannot lose a lead that is already in the database.
-    emailed = {'confirmation': False, 'notification': False}
-    if is_configured():
-        emailed['confirmation'] = send_email(
-            email,
-            'Your Infopace HR demo request',
-            _confirmation_body(email),
-            from_label='Infopace HR',
-        )
-        notify_to = _notify_address()
-        if notify_to:
-            emailed['notification'] = send_email(
-                notify_to,
-                f'Demo request: {email}',
-                _notification_body(email, source, now),
-                from_label='Infopace HR website',
-            )
-        else:
-            log.warning('demo request: no DEMO_NOTIFY_EMAIL or SMTP_FROM set, team not notified')
+    # The lead is safe now, so nobody should wait on the mail server. Sending
+    # inline made the visitor sit through the full SMTP round trip — seven
+    # seconds on a good day, fifteen when the server was refusing us, all of it
+    # after the work that mattered was already done. send_email swallows and
+    # logs its own failures, so the thread cannot take anything down with it.
+    configured = is_configured()
+    if configured:
+        threading.Thread(target=_send_mail, args=(email, source, now),
+                         name=f'demo-mail-{email}', daemon=True).start()
     else:
         log.warning('demo request stored but SMTP is not configured, no mail sent: %s', email)
 
-    return jsonify({'ok': True, 'emailed': emailed}), 201
+    # 'queued' rather than 'sent': at this point the request has been handed to
+    # a thread and nothing has been delivered yet, so the page promises a
+    # confirmation only when there is a mail server to send one.
+    return jsonify({'ok': True, 'emailed': {'confirmation': configured,
+                                            'notification': configured},
+                    'queued': configured}), 201
+
+
+def _send_mail(email: str, source: str, when: datetime):
+    """Runs off the request thread. Failures are logged by send_email."""
+    send_email(email, 'Your Infopace HR demo request',
+               _confirmation_body(email), from_label='Infopace HR')
+    notify_to = _notify_address()
+    if notify_to:
+        send_email(notify_to, f'Demo request: {email}',
+                   _notification_body(email, source, when),
+                   from_label='Infopace HR website')
+    else:
+        log.warning('demo request: no DEMO_NOTIFY_EMAIL or SMTP_FROM set, team not notified')
 
 
 @demo_requests_bp.route('', methods=['GET'])
