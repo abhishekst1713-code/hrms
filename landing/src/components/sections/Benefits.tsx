@@ -108,8 +108,11 @@ export default function Benefits() {
               <div className="panel grid place-items-center p-6">
                 <Gauge value={100} label="Records scoped to a tenant" size={124} />
               </div>
-              <div className="panel grid place-items-center p-6">
-                <Gauge value={45} label="Permissions across 5 roles" size={124} color="var(--c2)" />
+              {/* 45 is a count, not a proportion, so it gets a figure rather
+                  than a dial. */}
+              <div className="panel grid place-items-center p-6 text-center">
+                <p className="t-metric text-ink">45</p>
+                <p className="t-small mt-2 text-ink-2">Permissions across 5 roles</p>
               </div>
               <div className="panel col-span-2 p-6">
                 <p className="t-micro text-ink-3">Screens by module group</p>

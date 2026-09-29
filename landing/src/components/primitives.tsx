@@ -118,16 +118,22 @@ export function useShift(v: MotionValue<number>, px: number) {
 /* ---------------------------------------------------------------
    Small shared pieces
    --------------------------------------------------------------- */
-export function Eyebrow({ children, tone = 'brand' }: { children: ReactNode; tone?: 'brand' | 'accent' | 'light' }) {
+export function Eyebrow({ children, tone = 'brand', align = 'start' }: {
+  children: ReactNode; tone?: 'brand' | 'accent' | 'light'; align?: 'start' | 'center';
+}) {
   const tones = {
     brand:  'text-brand-700',
     accent: 'text-accent-700',
     light:  'text-brand-300',
   } as const;
+  const rule = <span aria-hidden className="inline-block h-px w-6 bg-current opacity-50" />;
   return (
-    <p className={`t-micro flex items-center gap-2 ${tones[tone]}`}>
-      <span aria-hidden className="inline-block h-px w-6 bg-current opacity-50" />
+    <p className={`t-micro flex items-center gap-2 ${tones[tone]}
+                   ${align === 'center' ? 'justify-center' : ''}`}>
+      {rule}
       {children}
+      {/* the trailing rule only exists so a centred eyebrow is optically centred */}
+      {align === 'center' && rule}
     </p>
   );
 }

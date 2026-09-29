@@ -124,7 +124,7 @@ export default function Problem() {
     <section className="relative border-y border-hairline bg-surface py-24 lg:py-32">
       <div className="rail">
         <div className="max-w-[60ch]">
-          <Eyebrow tone="accent">The cost of the status quo</Eyebrow>
+          <Eyebrow>Before you automate</Eyebrow>
           <h2 className="t-h2 mt-4 text-balance text-ink">
             Where the month actually goes
           </h2>

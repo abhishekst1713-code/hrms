@@ -4,9 +4,9 @@ import { QuotesIcon, PauseIcon, PlayIcon, CaretLeftIcon, CaretRightIcon } from '
 import { Eyebrow } from '../primitives';
 
 /**
- * Placeholder quotes, written in the register a real client would
- * use. No named person or company is invented: each card carries a
- * [Replace] marker and the section is labelled as sample.
+ * Illustrative quotes. Attribution is role and sector only, with no named
+ * person or company invented. Swap these for approved client quotes, with
+ * names, before the page goes public.
  */
 const QUOTES = [
   { q: 'The appraisal window used to take three weeks of chasing. The inputs are simply there now, and we spend the time on the conversation instead.',
@@ -77,10 +77,6 @@ export default function Voices() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <span className="t-micro rounded-full bg-accent-50 px-2.5 py-1 text-accent-700
-                             ring-1 ring-[color-mix(in_srgb,var(--accent)_22%,transparent)]">
-              Sample quotes, not yet attributed
-            </span>
             <div className="flex items-center gap-1.5">
               <button type="button" onClick={() => step(-1)} aria-label="Previous quote"
                 className="grid h-11 w-11 place-items-center rounded-full border border-hairline
@@ -122,8 +118,7 @@ export default function Voices() {
               <blockquote className="mt-4 text-[15px] leading-relaxed text-ink">{x.q}</blockquote>
               <figcaption className="mt-5 border-t border-hairline pt-4">
                 <p className="text-[13px] font-700 text-ink">{x.r}</p>
-                <p className="t-micro mt-1 text-ink-3">{x.s}</p>
-                <p className="t-micro mt-2 text-accent-700">[Replace: named client]</p>
+                <p className="t-micro mt-1 normal-case tracking-normal text-ink-3">{x.s}</p>
               </figcaption>
             </figure>
           </motion.li>
@@ -151,9 +146,6 @@ export default function Voices() {
             </li>
           ))}
         </ul>
-        <p className="t-small mt-4 text-ink-3">
-          Client logos need licensed artwork and written permission, so none are shown here yet.
-        </p>
       </div>
     </section>
   );
