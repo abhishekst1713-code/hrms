@@ -31,6 +31,12 @@ demo_requests_bp = Blueprint('demo_requests', __name__)
 # used as an email address.
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$')
 
+# A dot may not lead, trail or double up in the local part (RFC 5322 for an
+# unquoted local part), and no mailbox begins "www." — that one is always the
+# browser address bar bleeding into the form, and it produces a lead nobody can
+# reach. A real submission of "www.someone@gmail.com" is what prompted this.
+LOCAL_TYPO_RE = re.compile(r'^\.|\.$|\.\.|^www\.', re.I)
+
 MAX_EMAIL_LEN = 254        # RFC limit, also caps the stored value
 SOURCE_MAX_LEN = 60
 
@@ -96,6 +102,12 @@ def create_demo_request():
     email = _text(data.get('email')).lower()
     if not email or len(email) > MAX_EMAIL_LEN or not EMAIL_RE.match(email):
         return jsonify({'error': 'Enter a valid email address.'}), 400
+
+    local = email.split('@', 1)[0]
+    if LOCAL_TYPO_RE.search(local):
+        log.info('demo request rejected: malformed local part (%s)', email)
+        return jsonify({'error': 'That address does not look right. '
+                                 'Check for a stray "www." or a misplaced dot.'}), 400
 
     source = _text(data.get('source'))[:SOURCE_MAX_LEN] or 'landing'
     now = datetime.utcnow()

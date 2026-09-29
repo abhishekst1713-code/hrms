@@ -12,16 +12,25 @@ whoever has server access.
     python scripts/list_demo_requests.py --csv > leads.csv
 
 Run it from the backend directory so it picks up backend/.env for MONGO_URI.
+Needs pymongo. python-dotenv is optional: without it the script falls back to
+the MONGO_URI environment variable, then to mongodb://localhost:27017.
 """
 import argparse
 import csv
 import os
 import sys
 
-from dotenv import load_dotenv
 from pymongo import MongoClient
 
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+# python-dotenv is optional here. This script is often run with whichever
+# interpreter is to hand rather than the backend's venv, and a missing optional
+# import should not stop it: without it we fall back to MONGO_URI from the real
+# environment, then to the local default.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+except ImportError:
+    pass
 
 
 def main():
