@@ -79,8 +79,12 @@ export default function Journey() {
     offset: ['start 0.7', 'end 0.65'],
   });
 
+  // overflow-x-clip, not hidden: the stage cards enter from x +/-28px, so a card
+  // still waiting to animate in sits that far off the rail and widened the
+  // document on a phone. clip does not create a scroll container, so the spine's
+  // absolute positioning is untouched.
   return (
-    <section id="journey" className="relative bg-surface py-24 lg:py-32">
+    <section id="journey" className="relative overflow-x-clip bg-surface py-24 lg:py-32">
       <div className="rail">
         <div className="mx-auto max-w-[62ch] text-center">
           <Eyebrow align="center">The method</Eyebrow>
@@ -111,7 +115,10 @@ export default function Journey() {
                   <div className="hidden md:block">{left ? Card : null}</div>
                   <Node i={i} progress={scrollYProgress} />
                   {/* desktop right cell, and the only cell on mobile */}
-                  <div className="flex-1 md:flex-none">
+                  {/* min-w-0: without it the flex item's automatic minimum is its
+                      content's min-content width, so a long word in the card
+                      pushes the row past the viewport on a phone. */}
+                  <div className="min-w-0 flex-1 md:flex-none">
                     <div className="md:hidden">{Card}</div>
                     <div className="hidden md:block">{left ? null : Card}</div>
                   </div>

@@ -36,8 +36,11 @@ function Block({ flip, children, media }: {
 }
 
 export default function Benefits() {
+  // overflow-x-clip for the same reason as Journey: each Block enters from
+  // x +/-30px, so a block still waiting to animate in sat 30px off the rail and
+  // widened the document on a phone. clip does not create a scroll container.
   return (
-    <section className="bg-surface py-24 lg:py-32">
+    <section className="overflow-x-clip bg-surface py-24 lg:py-32">
       <div className="rail">
         <div className="max-w-[54ch]">
           <Eyebrow>Outcomes</Eyebrow>

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from pymongo import MongoClient
@@ -27,7 +27,11 @@ _allowed_origins_env = os.getenv('ALLOWED_ORIGINS', '')
 ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_env.split(',') if o.strip()]
 if not ALLOWED_ORIGINS:
     # Local dev default only — production deployments must set ALLOWED_ORIGINS.
-    ALLOWED_ORIGINS = ['http://localhost:3000']
+    # 3000 is the in-app React frontend; 5173/4173 are the marketing site's
+    # Vite dev and preview servers, which POST to /api/demo-requests.
+    ALLOWED_ORIGINS = ['http://localhost:3000',
+                       'http://localhost:5173',
+                       'http://localhost:4173']
     if os.getenv('FLASK_ENV') == 'production':
         print('[app.py] FATAL: ALLOWED_ORIGINS must be set in production (comma-separated origins).', flush=True)
         sys.exit(1)
@@ -76,6 +80,7 @@ from routes.leaves             import leaves_bp
 from routes.attendance         import attendance_bp
 from routes.payslips           import payslips_bp
 from routes.platform           import platform_bp
+from routes.demo_requests      import demo_requests_bp
 from routes.assets             import assets_bp
 from routes.support            import support_bp
 from routes.roles              import roles_bp
@@ -117,6 +122,7 @@ app.register_blueprint(leaves_bp,             url_prefix='/api/leaves')
 app.register_blueprint(attendance_bp,         url_prefix='/api/attendance')
 app.register_blueprint(payslips_bp,           url_prefix='/api/payslips')
 app.register_blueprint(platform_bp,           url_prefix='/api/platform')
+app.register_blueprint(demo_requests_bp,      url_prefix='/api/demo-requests')
 app.register_blueprint(assets_bp,             url_prefix='/api/assets')
 app.register_blueprint(support_bp,            url_prefix='/api/support')
 
@@ -130,6 +136,21 @@ def index():
 
 @app.errorhandler(404)
 def not_found(e):    return {'error': 'Not found'}, 404
+
+# flask-limiter's default 429 body is an HTML page, which every caller of
+# this API (the React app, the marketing site) has to parse as JSON. Return
+# the same shape as the other errors instead.
+@app.errorhandler(429)
+def rate_limited(e):
+    retry_after = getattr(e, 'retry_after', None)
+    body = {'error': 'Too many requests. Please wait a moment and try again.'}
+    if getattr(e, 'description', None):
+        body['limit'] = str(e.description)
+    resp = jsonify(body)
+    resp.status_code = 429
+    if retry_after:
+        resp.headers['Retry-After'] = str(retry_after)
+    return resp
 
 @app.errorhandler(500)
 def server_error(e):

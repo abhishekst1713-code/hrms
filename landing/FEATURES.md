@@ -66,3 +66,20 @@ Other modules
   assets, expenses, announcements, policies (+acknowledgements),
   org chart, support tickets, notifications
   scheduler.py                daily 09:00 birthday + work-anniversary mail
+
+This site's own "Book a demo" form
+  routes/demo_requests.py     POST /api/demo-requests — public, rate limited
+                              5/min + 30/hour, honeypot field company_website.
+                              Stores one row per address in demo_requests on
+                              the platform DB (not tenant-scoped: a visitor
+                              has no tenant), bumping request_count on a
+                              repeat instead of duplicating the lead.
+                              Sends two mails via services/email_service.py:
+                              a confirmation to the visitor and a heads-up to
+                              DEMO_NOTIFY_EMAIL. Sending is non-fatal, so a
+                              dead SMTP host cannot lose a stored lead.
+                              GET is platform-admin only.
+  needs configuring           backend/.env  DEMO_NOTIFY_EMAIL, SMTP_*
+                                            ALLOWED_ORIGINS must list this
+                                            site's origin
+                              landing/.env  VITE_API_URL = the API origin
