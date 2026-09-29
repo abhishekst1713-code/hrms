@@ -294,3 +294,24 @@
     transition-duration: .001ms !important;
   }
 }
+
+/* ── Hero headline: one word cycles, tawk.to style ──────────────────────────
+   The words are stacked in a single grid cell, so the line is always as wide
+   as the longest of them and nothing reflows as they swap — this is the LCP
+   element, and a width change here would cost CLS. Pure CSS, so the
+   prerendered markup and the hydrated page agree. */
+@keyframes wordcycle {
+  0%, 2%    { opacity: 0; transform: translateY(0.3em); }
+  6%, 23%   { opacity: 1; transform: translateY(0); }
+  29%, 100% { opacity: 0; transform: translateY(-0.3em); }
+}
+.wordcycle { display: inline-grid; vertical-align: bottom; }
+.wordcycle > span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  animation: wordcycle 12s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wordcycle > span { animation: none; opacity: 0; }
+  .wordcycle > span:first-child { opacity: 1; }
+}

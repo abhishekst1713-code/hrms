@@ -64,9 +64,9 @@ export default function Bento() {
             </h2>
           </div>
           <p className="t-body max-w-[42ch] text-ink-2">
-            Every module below is running in the product today, across
-            <span className="font-700 text-ink"> 32 screens</span> and
-            <span className="font-700 text-ink"> 26 API modules</span>.
+            Every module below is running in the product today, and they share
+            <span className="font-700 text-ink"> one employee record</span> —
+            so payroll reads the same attendance your managers approved.
           </p>
         </div>
 
@@ -98,7 +98,7 @@ export default function Bento() {
           </Cell>
 
           {/* 2 — leave, with the real cap logic */}
-          <Cell className="lg:col-span-2 lg:row-span-2" live>
+          <Cell className="lg:col-span-2" live>
             <Title icon={CalendarBlankIcon}>Leave with real caps</Title>
             <p className="t-body mt-3 text-ink-2">
               Eight built-in types and a monthly cap per employee category. Anything
@@ -146,7 +146,7 @@ export default function Bento() {
           </Cell>
 
           {/* 4 — letters */}
-          <Cell className="lg:col-span-2" live>
+          <Cell className="lg:col-span-4" live>
             <Title icon={FileTextIcon}>Letters from your templates</Title>
             <p className="t-body mt-3 text-ink-2">
               Offer letters are versioned, with new and revised subtypes, alongside
@@ -160,7 +160,7 @@ export default function Bento() {
           </Cell>
 
           {/* 5 — approval workflows, interactive */}
-          <Cell className="lg:col-span-4">
+          <Cell className="lg:col-span-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Title icon={LightningIcon}>Configurable approval chains</Title>
               <Chip tone="brand">Live</Chip>

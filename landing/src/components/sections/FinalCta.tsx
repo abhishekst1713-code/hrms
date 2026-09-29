@@ -201,9 +201,9 @@ export default function FinalCta() {
               {state !== 'sent' && (
                 <p className="t-small mt-4 text-[var(--on-deep-2)]">
                   One email, to arrange the walkthrough. Or write to{' '}
-                  <a href="mailto:hello@infopaceindia.com"
+                  <a href="mailto:support@infopaceindia.com"
                      className="text-[var(--on-deep-3)] underline underline-offset-4">
-                    hello@infopaceindia.com
+                    support@infopaceindia.com
                   </a>
                 </p>
               )}

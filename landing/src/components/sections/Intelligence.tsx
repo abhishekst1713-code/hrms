@@ -68,9 +68,6 @@ export default function Intelligence() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="t-h4 text-white">Headcount, twelve months</h3>
-                <p className="t-small mt-1 text-[var(--on-deep-2)]">
-                  From <span className="font-700">GET /api/analytics/headcount</span>
-                </p>
               </div>
               <SampleTag />
             </div>

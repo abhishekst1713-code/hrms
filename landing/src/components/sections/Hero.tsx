@@ -2,12 +2,16 @@ import { ArrowRightIcon, PlayCircleIcon } from '@phosphor-icons/react';
 import HeroDashboard from './HeroDashboard';
 import { Counter } from '../primitives';
 
-/* Counted from the codebase: App.jsx routes, backend/routes, permissions.py */
+/* What an HR team actually weighs up, all counted from the codebase:
+   payroll_engine.py, routes/leaves.py, permissions.py. */
 const PROOF = [
-  { v: 32, label: 'Screens in the product' },
-  { v: 26, label: 'API modules' },
+  { v: 4,  label: 'Statutory heads: PF, ESI, PT, TDS' },
+  { v: 8,  label: 'Leave types, with monthly caps' },
   { v: 45, label: 'Permissions across 5 roles' },
 ];
+
+/* The cycling word. Kept to a similar length so the stacked cell stays tight. */
+const VERBS = ['Transform', 'Automate', 'Simplify', 'Unify'];
 
 export default function Hero() {
   return (
@@ -29,7 +33,16 @@ export default function Hero() {
             </div>
 
             <h1 className="rise rise-2 t-hero max-w-[21ch] text-ink xl:max-w-[24ch]">
-              Transform HR operations with intelligent automation
+              {/* One accessible label; the animation is decoration over it. */}
+              <span className="sr-only">Transform HR operations with intelligent automation</span>
+              <span aria-hidden>
+                <span className="wordcycle text-brand-700">
+                  {VERBS.map((w, i) => (
+                    <span key={w} style={{ animationDelay: `${i * 3}s` }}>{w}</span>
+                  ))}
+                </span>{' '}
+                HR operations with intelligent automation
+              </span>
             </h1>
 
             <p className="rise rise-3 t-body-xl mt-6 max-w-[54ch] text-ink-2">
