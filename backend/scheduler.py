@@ -10,52 +10,37 @@ import threading
 import time
 import logging
 import os
-import smtplib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, date, timedelta
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+
+from services.email_service import is_configured, try_send_email
 
 log = logging.getLogger(__name__)
 
 # Bounds how many tenants' daily checks run concurrently — each tenant's
-# work is I/O-bound (Mongo queries + SMTP sends), so a modest thread pool
+# work is I/O-bound (Mongo queries + mail sends), so a modest thread pool
 # lets tenant count grow without the whole run serializing behind one
-# slow SMTP send, while still isolating failures per tenant (see the
+# slow send, while still isolating failures per tenant (see the
 # try/except around each future below).
 MAX_CONCURRENT_TENANTS = int(os.getenv('SCHEDULER_MAX_CONCURRENT_TENANTS', 8))
 
 
 def _send_email(to_email: str, subject: str, body: str):
-    smtp_host = os.getenv('SMTP_HOST', '')
-    smtp_user = os.getenv('SMTP_USER', '')
-    smtp_pass = os.getenv('SMTP_PASS', '')
-    smtp_port = int(os.getenv('SMTP_PORT', 587))
-    from_addr = os.getenv('SMTP_FROM') or smtp_user
-    company   = os.getenv('COMPANY_NAME', 'Infopace Management Pvt Ltd')
+    """Goes through services.email_service so these reminders use whatever
+    transport the deployment has — the provider API where outbound SMTP is
+    blocked, SMTP where it is not."""
+    company = os.getenv('COMPANY_NAME', 'Infopace Management Pvt Ltd')
 
-    if not smtp_host or not smtp_user:
-        log.warning('Scheduler: SMTP not configured — skipping email to %s', to_email)
+    if not is_configured():
+        log.warning('Scheduler: email not configured — skipping email to %s', to_email)
         return False
 
-    try:
-        msg = MIMEMultipart()
-        msg['From']    = f'{company} HR <{from_addr}>'
-        msg['To']      = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-
-        with smtplib.SMTP(smtp_host, smtp_port) as s:
-            s.ehlo(); s.starttls(); s.ehlo()
-            s.login(smtp_user, smtp_pass)
-            s.sendmail(from_addr, to_email, msg.as_string())
-
+    sent, err = try_send_email(to_email, subject, body, from_label=f'{company} HR')
+    if sent:
         log.info('Scheduler: email sent to %s — %s', to_email, subject)
-        return True
-
-    except Exception as e:
-        log.error('Scheduler: email failed to %s — %s', to_email, e)
-        return False
+    else:
+        log.error('Scheduler: email failed to %s — %s', to_email, err)
+    return sent
 
 
 def _parse_date(d_str: str):
@@ -216,7 +201,7 @@ def run_daily_checks(app):
                     # Runs inside a worker thread — needs its own app context
                     # for anything touching current_app (get_db()/services),
                     # even though _run_daily_checks_for_tenant here only uses
-                    # the already-bound `tdb` and stdlib/smtplib calls.
+                    # the already-bound `tdb` and stdlib/email calls.
                     with app.app_context():
                         return tenant_id, _run_daily_checks_for_tenant(tdb, company_name, today)
 

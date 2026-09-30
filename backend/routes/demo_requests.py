@@ -21,7 +21,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from auth_utils import platform_admin_required
 from extensions import limiter
-from services.email_service import send_email, is_configured
+from services.email_service import from_address, send_email, is_configured
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def _text(value) -> str:
 def _notify_address():
     """Where the internal heads-up goes. Falls back to the send-as address
     so a missing setting means 'tell us at our own mailbox', not silence."""
-    return os.getenv('DEMO_NOTIFY_EMAIL') or os.getenv('SMTP_FROM') or os.getenv('SMTP_USER')
+    return os.getenv('DEMO_NOTIFY_EMAIL') or from_address()
 
 
 def _confirmation_body(email: str) -> str:
@@ -132,16 +132,16 @@ def create_demo_request():
     log.info('demo request stored (%s): %s', 'new' if is_new else 'repeat', email)
 
     # The lead is safe now, so nobody should wait on the mail server. Sending
-    # inline made the visitor sit through the full SMTP round trip — seven
-    # seconds on a good day, fifteen when the server was refusing us, all of it
-    # after the work that mattered was already done. send_email swallows and
+    # inline made the visitor sit through the full round trip — seven seconds
+    # on a good day, fifteen when the server was refusing us, all of it after
+    # the work that mattered was already done. send_email swallows and
     # logs its own failures, so the thread cannot take anything down with it.
     configured = is_configured()
     if configured:
         threading.Thread(target=_send_mail, args=(email, source, now),
                          name=f'demo-mail-{email}', daemon=True).start()
     else:
-        log.warning('demo request stored but SMTP is not configured, no mail sent: %s', email)
+        log.warning('demo request stored but email is not configured, no mail sent: %s', email)
 
     # 'queued' rather than 'sent': at this point the request has been handed to
     # a thread and nothing has been delivered yet, so the page promises a
@@ -161,7 +161,7 @@ def _send_mail(email: str, source: str, when: datetime):
                    _notification_body(email, source, when),
                    from_label='Infopace HR website')
     else:
-        log.warning('demo request: no DEMO_NOTIFY_EMAIL or SMTP_FROM set, team not notified')
+        log.warning('demo request: no DEMO_NOTIFY_EMAIL or send-as address set, team not notified')
 
 
 @demo_requests_bp.route('', methods=['GET'])

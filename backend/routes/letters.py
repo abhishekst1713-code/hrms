@@ -15,16 +15,13 @@ from flask import Blueprint, request, jsonify, current_app, send_file, g
 from flask_jwt_extended import get_jwt_identity
 from datetime import datetime
 from bson import ObjectId
-import os, smtplib, bcrypt, logging, base64, io, traceback, tempfile, gridfs
+import os, bcrypt, logging, base64, io, traceback, tempfile, gridfs
 from io import BytesIO
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
-from email import encoders
 import subprocess
 import shutil
 from docx import Document as DocxDocument
 from html.parser import HTMLParser
+from services.email_service import is_configured as email_is_configured, try_send_email
 from services.letter_generator import generate_letter_docx, generate_letter_pdf
 from services.gridfs_storage import save_file_to_gridfs, serve_from_gridfs, delete_from_gridfs
 
@@ -1145,28 +1142,18 @@ def send_email(lid):
             {company}
         """
 
-    smtp_host = os.getenv('SMTP_HOST') or os.getenv('SMTP_SERVER', '')
-    smtp_user = os.getenv('SMTP_USER') or os.getenv('SMTP_EMAIL', '')
-    smtp_pass = os.getenv('SMTP_PASS') or os.getenv('SMTP_PASSWORD', '')
-    smtp_port = int(os.getenv('SMTP_PORT', 587))
-    from_addr = os.getenv('SMTP_FROM') or os.getenv('SMTP_EMAIL', smtp_user)
-    sent      = False
-    err_msg   = ''
+    if not email_is_configured():
+        return jsonify({'error': 'Email is not configured. Set RESEND_API_KEY, BREVO_API_KEY or '
+                                 'SENDGRID_API_KEY (with EMAIL_FROM), or SMTP_HOST/SMTP_USER.'}), 500
 
-    if not smtp_host or not smtp_user:
-        return jsonify({'error': 'SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS in your .env file.'}), 500
+    sent    = False
+    err_msg = ''
+    tmp_dir = None
 
     try:
-        msg = MIMEMultipart()
-        msg['From']    = f'Infopace Management Pvt Ltd - HR Team <{from_addr}>'
-        msg['To']      = to_email
-        msg['Subject'] = f'Offer Letter {desig} at {company}'
-        msg.attach(MIMEText(body, 'plain'))
-
         hr_sig        = data.get('hr_signature', '')
         chairman_sig  = data.get('chairman_signature', '')
         pdf_to_attach = None
-        tmp_dir       = None
 
         if hr_sig or chairman_sig:
             tmpl = db.templates.find_one({'_id': ObjectId(l['template_id'])})
@@ -1198,25 +1185,23 @@ def send_email(lid):
         elif not pdf_to_attach and l.get('pdf_path') and os.path.exists(l['pdf_path']):
             pdf_to_attach = l['pdf_path']
 
+        attachments = []
         if pdf_to_attach and os.path.exists(pdf_to_attach):
             with open(pdf_to_attach, 'rb') as f:
-                part = MIMEBase('application', 'pdf')
-                part.set_payload(f.read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition',
-                            f'attachment; filename="Offer_Letter_{emp_name.replace(" ", "_")}.pdf"')
-            msg.attach(part)
+                attachments.append({
+                    'filename': f'Offer_Letter_{emp_name.replace(" ", "_")}.pdf',
+                    'content':  f.read(),
+                    'mimetype': 'application/pdf',
+                })
 
-        with smtplib.SMTP(smtp_host, smtp_port) as s:
-            s.ehlo(); s.starttls(); s.ehlo()
-            s.login(smtp_user, smtp_pass)
-            s.sendmail(from_addr, to_email, msg.as_string())
-        sent = True
+        # try_send_email picks the transport: the provider HTTP API where one
+        # is configured (the only thing that works where outbound SMTP is
+        # blocked), SMTP otherwise. Its error is the one shown to the HR user
+        # who clicked send, so it says what to change rather than "failed".
+        sent, err_msg = try_send_email(to_email, f'Offer Letter {desig} at {company}', body,
+                                       from_label='Infopace Management Pvt Ltd - HR Team',
+                                       attachments=attachments)
 
-    except smtplib.SMTPAuthenticationError:
-        err_msg = 'Gmail authentication failed. Check your App Password in .env.'
-    except smtplib.SMTPException as e:
-        err_msg = f'SMTP error: {str(e)}'
     except Exception as e:
         err_msg = f'Email failed: {str(e)}'
     finally:

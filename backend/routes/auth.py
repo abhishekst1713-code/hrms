@@ -145,7 +145,7 @@ def create_user():
     random unusable placeholder is stored, an invite token is emailed, and
     the account activates only once the invitee sets their own password
     via /accept-invite. Falls back to returning the invite link in the
-    response when SMTP isn't configured (dev/demo environments)."""
+    response when email isn't configured (dev/demo environments)."""
     db   = get_db()
     data = request.json or {}
     if not data.get('email') or not data.get('name'):
@@ -196,7 +196,7 @@ def create_user():
     log_audit(db, g.tenant_id, g.caller, 'user.invited', entity_type='user', entity_id=result.inserted_id,
               details={'email': data['email'], 'role_key': role_fields.get('role_key')})
 
-    resp = {'id': str(result.inserted_id), 'message': 'Invite sent' if emailed else 'User created — SMTP not configured, share the invite link manually'}
+    resp = {'id': str(result.inserted_id), 'message': 'Invite sent' if emailed else 'User created — email not configured, share the invite link manually'}
     if not emailed:
         resp['invite_url'] = accept_url
     return jsonify(resp), 201

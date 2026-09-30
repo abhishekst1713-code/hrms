@@ -1,15 +1,17 @@
 """
-scripts/test_smtp.py — say exactly why mail is or is not going out.
+scripts/test_email.py — say exactly why mail is or is not going out.
 
 send_email() deliberately swallows its own failures so a dead mail server
 cannot break the request that triggered it. That is right for production and
 useless for debugging, because the reason ends up in a log nobody is watching.
 This walks the same steps by hand and prints where it stopped.
 
-    python scripts/test_smtp.py
-    python scripts/test_smtp.py --to someone@example.com
+    python scripts/test_email.py
+    python scripts/test_email.py --to someone@example.com
 
-Run it from the backend directory so it reads backend/.env.
+It checks whichever transport the environment selects: a provider HTTP API
+when one has a key, SMTP otherwise. Run it from the backend directory so it
+reads backend/.env.
 """
 import argparse
 import os
@@ -19,6 +21,8 @@ import ssl
 import sys
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 try:
     from dotenv import load_dotenv
@@ -71,6 +75,13 @@ def explain(e):
     if isinstance(e, socket.gaierror):
         return ('The host name could not be resolved.',
                 ['Check SMTP_HOST is spelled correctly (smtp.gmail.com for Gmail).'])
+    if isinstance(e, OSError) and getattr(e, 'errno', None) in (97, 101, 110, 113):
+        return ('The host is not allowed to open an outbound SMTP connection.',
+                ['This is what a free Render instance does: ports 25, 465 and 587 '
+                 'are blocked, so no SMTP setting can fix it.',
+                 'Send over HTTPS instead — set RESEND_API_KEY, BREVO_API_KEY or '
+                 'SENDGRID_API_KEY, plus EMAIL_FROM, and redeploy.',
+                 'See EMAIL_SETUP.md for the five-minute version.'])
     if isinstance(e, (ConnectionRefusedError, smtplib.SMTPConnectError, OSError)):
         return ('Could not reach the mail server at all.',
                 ['Check SMTP_HOST is spelled correctly (smtp.gmail.com for Gmail).',
@@ -78,10 +89,44 @@ def explain(e):
     return (type(e).__name__, [str(e)[:200]])
 
 
+def check_provider(name, args):
+    """A provider is one HTTPS call, so there is nothing to walk through:
+    either the key and sender are accepted or the body says why not."""
+    from services.email_service import from_address, try_send_email
+
+    sender = from_address()
+    print(f'\n{OK} Transport          {name} (HTTPS, port 443)')
+    print(f'{OK if sender else BAD} EMAIL_FROM         {sender or "(empty)"}')
+    if not sender:
+        print('\nSet EMAIL_FROM to the address verified with the provider.')
+        return 1
+    if not args.to:
+        print('\nAdd --to your@address.com to send a real test message through it.')
+        return 0
+
+    sent, err = try_send_email(args.to, 'Infopace HR — email test',
+                               'If you are reading this, the app can send mail.\n',
+                               from_label='Infopace HR')
+    if not sent:
+        print(f'{BAD} {name} rejected the send\n')
+        print(f'        - {err}')
+        print('\n        - A 401/403 means the API key is wrong or revoked.')
+        print('        - A 403 naming the sender means EMAIL_FROM is not verified '
+              'with the provider yet.')
+        return 1
+    print(f'{OK} test message accepted for {args.to}')
+    return 0
+
+
 def main():
-    ap = argparse.ArgumentParser(description='Diagnose the SMTP configuration.')
+    ap = argparse.ArgumentParser(description='Diagnose the email configuration.')
     ap.add_argument('--to', help='send a real test message to this address')
     args = ap.parse_args()
+
+    from services.email_service import transport
+    name = transport()
+    if name and name != 'smtp':
+        return check_provider(name, args)
 
     host = os.getenv('SMTP_HOST') or os.getenv('SMTP_SERVER', '')
     user = os.getenv('SMTP_USER') or os.getenv('SMTP_EMAIL', '')
@@ -91,6 +136,8 @@ def main():
     notify = os.getenv('DEMO_NOTIFY_EMAIL', '')
 
     print('\nSettings read from backend/.env')
+    print(f'{OK if host and user else INFO} Transport          '
+          f'{"smtp" if host and user else "(none configured)"}')
     print(f'{OK if host else BAD} SMTP_HOST          {host or "(empty)"}')
     print(f'{OK if user else BAD} SMTP_USER          {user or "(empty)"}')
     print(f'{OK if pwd else BAD} SMTP_PASS          '
@@ -100,8 +147,10 @@ def main():
     print(f'{OK if notify else INFO} DEMO_NOTIFY_EMAIL  {notify or "(empty, team gets no heads-up)"}')
 
     if not host or not user:
-        print('\nSMTP is not configured, so the app stores leads and sends nothing.')
-        print('Fill SMTP_HOST and SMTP_USER in backend/.env, then run this again.')
+        print('\nNo transport is configured, so the app stores leads and sends nothing.')
+        print('Either set RESEND_API_KEY / BREVO_API_KEY / SENDGRID_API_KEY and '
+              'EMAIL_FROM (works anywhere, including hosts that block SMTP),')
+        print('or fill SMTP_HOST and SMTP_USER in backend/.env. Then run this again.')
         return 1
 
     if 'gmail' in host and pwd and (' ' in pwd or len(pwd) != 16):
@@ -123,7 +172,7 @@ def main():
                 msg = MIMEMultipart()
                 msg['From'] = f'Infopace HR <{sender}>'
                 msg['To'] = args.to
-                msg['Subject'] = 'Infopace HR — SMTP test'
+                msg['Subject'] = 'Infopace HR — email test'
                 msg.attach(MIMEText(
                     'If you are reading this, the Book a demo form can send mail.\n',
                     'plain'))

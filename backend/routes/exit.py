@@ -20,13 +20,16 @@ from datetime import datetime, timedelta
 from calendar import monthrange
 from bson import ObjectId
 from io import BytesIO
-import os, re, tempfile, zipfile, gridfs, smtplib
-from email.message import EmailMessage
+import logging
+import os, re, tempfile, zipfile, gridfs
+from services.email_service import try_send_email
 from services.letter_generator import generate_letter_docx, generate_letter_pdf
 
 from auth_utils import tenant_scoped, require_role, require_permission
 from tenant_scope import get_db
 from workflow_engine import start_workflow, advance_workflow, get_instance_for_entity, WorkflowError
+
+log = logging.getLogger(__name__)
 
 exit_bp = Blueprint('exit', __name__)
 
@@ -553,35 +556,24 @@ def generate_relieving():
     candidate_email = data.get('candidate_email', '').strip()
     email_sent = False
     if candidate_email and pdf_bytes:
-        try:
-            msg = EmailMessage()
-            msg['Subject'] = f"Your Relieving Letter — {emp.get('name', '')}"
-            msg['From']    = os.getenv('SMTP_FROM', 'hr@company.com')
-            msg['To']      = candidate_email
-            msg.set_content(
-                f"Dear {emp.get('name', '')},\n\n"
-                f"Please find attached your relieving letter. "
-                f"We wish you all the best in your future endeavours.\n\n"
-                f"Regards,\n{data.get('hr_signatory_name', 'HR Team')}\n"
-                f"{data.get('hr_signatory_designation', 'HR Manager')}"
-            )
-            msg.add_attachment(
-                pdf_bytes,
-                maintype='application',
-                subtype='pdf',
-                filename=f"{emp.get('name', 'employee').replace(' ', '_')}_relieving_letter.pdf"
-            )
-            smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
-            smtp_port = int(os.getenv('SMTP_PORT', 587))
-            smtp_user = os.getenv('SMTP_USER', '')
-            smtp_pass = os.getenv('SMTP_PASS', '')
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
-            email_sent = True
-        except Exception as mail_err:
-            print(f"[WARN] Email send failed: {mail_err}")
+        body = (
+            f"Dear {emp.get('name', '')},\n\n"
+            f"Please find attached your relieving letter. "
+            f"We wish you all the best in your future endeavours.\n\n"
+            f"Regards,\n{data.get('hr_signatory_name', 'HR Team')}\n"
+            f"{data.get('hr_signatory_designation', 'HR Manager')}"
+        )
+        filename = f"{emp.get('name', 'employee').replace(' ', '_')}_relieving_letter.pdf"
+        email_sent, mail_err = try_send_email(
+            candidate_email,
+            f"Your Relieving Letter — {emp.get('name', '')}",
+            body,
+            from_label='HR Team',
+            attachments=[{'filename': filename, 'content': pdf_bytes,
+                          'mimetype': 'application/pdf'}],
+        )
+        if not email_sent:
+            log.warning('Relieving letter email failed: %s (%s)', candidate_email, mail_err)
 
     return jsonify({
         'id':         str(result.inserted_id),
