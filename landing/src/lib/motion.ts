@@ -18,3 +18,13 @@ export const stagger = (gap = 0.07): Variants => ({
 });
 
 export const viewportOnce = { once: true, margin: '-12% 0px -8% 0px' } as const;
+
+/**
+ * Scroll-linked draw progress, 0 to 1, for a chart that should paint itself
+ * as the reader arrives rather than firing once on entry. The element starts
+ * drawing as its top passes 88% of the viewport and finishes by the time it
+ * reaches the middle, so the line is still moving while the section is being
+ * read. Spring-smoothed, because a raw scroll value on a trackpad is jittery.
+ */
+export const DRAW_OFFSET = ['start 0.88', 'center 0.52'] as const;
+export const DRAW_SPRING = { stiffness: 110, damping: 30, restDelta: 0.001 } as const;
