@@ -4,13 +4,14 @@ import { ArrowRightIcon, CheckCircleIcon, WarningCircleIcon, SpinnerGapIcon } fr
 import { usePointer, useShift } from '../primitives';
 import { EASE } from '../../lib/motion';
 
-/* Where the form posts. Set VITE_API_URL at build time to the API's origin
-   (e.g. https://api.infopaceindia.com). Falling back to '' means same-origin,
-   which is right when the site is served behind the same host as the API — and
-   fails loudly in the network tab rather than quietly posting to localhost from
-   a production build. */
-const API = import.meta.env.VITE_API_URL
-  ?? (import.meta.env.DEV ? 'http://localhost:5050' : '');
+/* Where the form posts. In production it is always this site's own
+   /api/demo-requests (landing/api/demo-requests.js, a Vercel function that
+   writes the lead to MongoDB), so the form does not depend on the Flask API
+   being reachable. In `npm run dev` there is no Vercel function, so it goes to
+   VITE_API_URL or the local Flask backend, which stores the lead the same way. */
+const API = import.meta.env.DEV
+  ? (import.meta.env.VITE_API_URL || 'http://localhost:5050')
+  : '';
 
 const STEPS = [
   { n: 1, t: 'Book a demo',
