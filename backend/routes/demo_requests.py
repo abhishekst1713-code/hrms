@@ -21,6 +21,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from auth_utils import platform_admin_required
 from extensions import limiter
+from runtime_env import background_work_survives_response
 from services.email_service import from_address, send_email, is_configured
 
 log = logging.getLogger(__name__)
@@ -136,10 +137,18 @@ def create_demo_request():
     # on a good day, fifteen when the server was refusing us, all of it after
     # the work that mattered was already done. send_email swallows and
     # logs its own failures, so the thread cannot take anything down with it.
+    #
+    # Except where a thread is a hole in the floor: a serverless instance is
+    # frozen the moment the response is written, so the send would be paused
+    # part-way and, more often than not, never resumed — no error, no mail.
+    # There the visitor waits for the send, because a slow confirmation
+    # beats a silent one.
     configured = is_configured()
-    if configured:
+    if configured and background_work_survives_response():
         threading.Thread(target=_send_mail, args=(email, source, now),
                          name=f'demo-mail-{email}', daemon=True).start()
+    elif configured:
+        _send_mail(email, source, now)
     else:
         log.warning('demo request stored but email is not configured, no mail sent: %s', email)
 

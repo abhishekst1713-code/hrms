@@ -69,12 +69,17 @@ if not _jwt_secret:
 
 app.config['JWT_SECRET_KEY']            = _jwt_secret
 app.config['JWT_ACCESS_TOKEN_EXPIRES']  = timedelta(hours=8)
-app.config['STORAGE_ROOT']              = os.path.join(os.getcwd(), 'storage')
-app.config['UPLOAD_FOLDER']             = os.path.join(os.getcwd(), 'storage')
 app.config['MONGO_URI']                 = os.getenv('MONGO_URI', 'mongodb://localhost:27017/hr_offer_letters')
 
-for d in ['templates', 'letters', 'documents', 'previews']:
-    os.makedirs(os.path.join(app.config['STORAGE_ROOT'], d), exist_ok=True)
+# Creating these unconditionally under the working directory took the whole
+# app down at import on a read-only filesystem — every request a 500, with
+# the real reason buried in a build log. writable_storage_root falls back to
+# the temp directory instead, which is enough because durable files go to
+# GridFS anyway.
+from runtime_env import is_serverless, writable_storage_root
+_storage_root = writable_storage_root(['templates', 'letters', 'documents', 'previews'])
+app.config['STORAGE_ROOT']              = _storage_root
+app.config['UPLOAD_FOLDER']             = _storage_root
 
 jwt    = JWTManager(app)
 client = MongoClient(app.config['MONGO_URI'])
@@ -187,8 +192,17 @@ def tenant_mismatch(e):
 #     return jsonify(run_checks_now(app))
 
 # ── Start background scheduler (birthday + anniversary emails) ────────────────
-from scheduler import start_scheduler
-start_scheduler(app)
+# The scheduler is a thread that waits for 09:00. That needs a process that
+# keeps running, which a serverless instance is not — it is frozen between
+# requests and destroyed when idle, so the thread would sit there and never
+# fire. Say so once rather than leaving a timer that looks alive and is not.
+if is_serverless():
+    print('[app.py] Serverless runtime detected — daily birthday/anniversary '
+          'scheduler not started. Drive scheduler.run_checks_now(app) from a '
+          'platform cron instead.', flush=True)
+else:
+    from scheduler import start_scheduler
+    start_scheduler(app)
 
 # ── Start biometric attendance sync (guarded — a missing device/driver
 #    should never take down the whole API) ────────────────────────────────────
