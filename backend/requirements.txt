@@ -14,3 +14,4 @@ opencv-python-headless>=4.9.0.80
 python-dotenv
 requests>=2.31.0
 cryptography>=42.0.0
+gunicorn==23.0.0
