@@ -14,7 +14,7 @@ const API = import.meta.env.VITE_API_URL
 
 const STEPS = [
   { n: 1, t: 'Book a demo',
-    d: 'Share your email and a little about how your HR runs today.' },
+    d: 'Share your name, company and how to reach you.' },
   { n: 2, t: 'Guided walkthrough',
     d: 'We show you the records, leave, attendance and payroll screens for your roles.' },
   { n: 3, t: 'Go live',
@@ -22,6 +22,21 @@ const STEPS = [
 ];
 
 type State = 'idle' | 'sending' | 'sent' | 'error';
+
+type Field = 'name' | 'company_name' | 'phone' | 'email';
+const EMPTY: Record<Field, string> = { name: '', company_name: '', phone: '', email: '' };
+
+const FIELDS: { key: Field; label: string; type: string; placeholder: string;
+                autoComplete: string; inputMode?: 'email' | 'tel' | 'text' }[] = [
+  { key: 'name', label: 'Full name', type: 'text', placeholder: 'Your name',
+    autoComplete: 'name' },
+  { key: 'company_name', label: 'Company name', type: 'text', placeholder: 'Company name',
+    autoComplete: 'organization' },
+  { key: 'phone', label: 'Phone number', type: 'tel', placeholder: 'Phone number',
+    autoComplete: 'tel', inputMode: 'tel' },
+  { key: 'email', label: 'Work email address', type: 'email', placeholder: 'you@organization.com',
+    autoComplete: 'email', inputMode: 'email' },
+];
 
 export default function FinalCta() {
   const ref = useRef<HTMLElement>(null);
@@ -32,7 +47,7 @@ export default function FinalCta() {
   const beamX = useShift(px, 90);
   const beamY = useShift(py, 60);
 
-  const [email, setEmail] = useState('');
+  const [form, setForm] = useState(EMPTY);
   const [honeypot, setHoneypot] = useState('');
   const [state, setState] = useState<State>('idle');
   const [message, setMessage] = useState('');
@@ -43,19 +58,25 @@ export default function FinalCta() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (state === 'sending') return;
+    const missing = FIELDS.find(f => !form[f.key].trim());
+    if (missing) {
+      setState('error');
+      setMessage(`Enter your ${missing.label.toLowerCase()}.`);
+      return;
+    }
     setState('sending');
     setMessage('');
     try {
       const res = await fetch(`${API}/api/demo-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source: 'landing', company_website: honeypot }),
+        body: JSON.stringify({ ...form, source: 'landing', company_website: honeypot }),
       });
       if (res.ok) {
         const ok = await res.json().catch(() => ({}));
         setConfirmed(Boolean(ok?.emailed?.confirmation));
         setState('sent');
-        setEmail('');
+        setForm(EMPTY);
         return;
       }
       // the API sends a usable sentence for a bad address; anything else is ours
@@ -141,20 +162,29 @@ export default function FinalCta() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={submit} noValidate className="flex flex-col gap-3 sm:flex-row">
-                  <div className="flex-1">
-                    <label htmlFor="demo-email" className="sr-only">Work email address</label>
-                    <input
-                      id="demo-email" type="email" required value={email}
-                      onChange={e => { setEmail(e.target.value); if (state === 'error') setState('idle'); }}
-                      placeholder="you@organization.com"
-                      autoComplete="email" inputMode="email"
-                      aria-invalid={state === 'error'}
-                      aria-describedby={state === 'error' ? 'demo-error' : undefined}
-                      className="h-14 w-full rounded-[12px] border border-white/20 bg-white/[0.08]
-                                 px-5 text-[15px] text-white outline-none transition-colors
-                                 placeholder:text-[var(--on-deep-2)]
-                                 focus:border-[var(--on-deep-3)] focus:bg-white/[0.12]" />
+                <form onSubmit={submit} noValidate className="flex flex-col gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {FIELDS.map(f => (
+                      <div key={f.key}>
+                        <label htmlFor={`demo-${f.key}`} className="sr-only">{f.label}</label>
+                        <input
+                          id={`demo-${f.key}`} name={f.key} type={f.type} required
+                          value={form[f.key]}
+                          onChange={e => {
+                            const v = e.target.value;
+                            setForm(prev => ({ ...prev, [f.key]: v }));
+                            if (state === 'error') setState('idle');
+                          }}
+                          placeholder={f.placeholder}
+                          autoComplete={f.autoComplete} inputMode={f.inputMode}
+                          aria-invalid={state === 'error'}
+                          aria-describedby={state === 'error' ? 'demo-error' : undefined}
+                          className="h-14 w-full rounded-[12px] border border-white/20 bg-white/[0.08]
+                                     px-5 text-[15px] text-white outline-none transition-colors
+                                     placeholder:text-[var(--on-deep-2)]
+                                     focus:border-[var(--on-deep-3)] focus:bg-white/[0.12]" />
+                      </div>
+                    ))}
                   </div>
 
                   {/* Hidden from people, tempting to bots. Parked off-screen rather
@@ -169,7 +199,7 @@ export default function FinalCta() {
                   </div>
 
                   <button type="submit" disabled={state === 'sending'}
-                    className="group inline-flex h-14 shrink-0 items-center justify-center gap-2
+                    className="group inline-flex h-14 shrink-0 items-center justify-center gap-2 sm:self-start
                                rounded-[12px] bg-white px-7 text-[15px] font-700
                                text-[var(--surface-deep)] transition-transform duration-200
                                hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70">
@@ -200,7 +230,7 @@ export default function FinalCta() {
 
               {state !== 'sent' && (
                 <p className="t-small mt-4 text-[var(--on-deep-2)]">
-                  One email, to arrange the walkthrough. Or write to{' '}
+                  We use these details only to arrange the walkthrough. Or write to{' '}
                   <a href="mailto:support@infopaceindia.com"
                      className="text-[var(--on-deep-3)] underline underline-offset-4">
                     support@infopaceindia.com
