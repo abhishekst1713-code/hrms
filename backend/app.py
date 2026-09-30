@@ -101,6 +101,7 @@ from routes.attendance         import attendance_bp
 from routes.payslips           import payslips_bp
 from routes.platform           import platform_bp
 from routes.demo_requests      import demo_requests_bp
+from routes.diagnostics        import diagnostics_bp
 from routes.assets             import assets_bp
 from routes.support            import support_bp
 from routes.roles              import roles_bp
@@ -143,6 +144,7 @@ app.register_blueprint(attendance_bp,         url_prefix='/api/attendance')
 app.register_blueprint(payslips_bp,           url_prefix='/api/payslips')
 app.register_blueprint(platform_bp,           url_prefix='/api/platform')
 app.register_blueprint(demo_requests_bp,      url_prefix='/api/demo-requests')
+app.register_blueprint(diagnostics_bp,        url_prefix='/api/diagnostics')
 app.register_blueprint(assets_bp,             url_prefix='/api/assets')
 app.register_blueprint(support_bp,            url_prefix='/api/support')
 

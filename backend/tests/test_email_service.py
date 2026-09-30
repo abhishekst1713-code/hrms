@@ -244,3 +244,49 @@ def test_unconfigured_send_fails_without_raising():
     sent, err = email_service.try_send_email('you@example.com', 'Subject', 'Body')
     assert sent is False
     assert 'not configured' in err
+
+
+# ── check_connection ──────────────────────────────────────────────────────
+
+def test_check_connection_signs_in_without_sending(monkeypatch, fake_smtp):
+    monkeypatch.setenv('SMTP_HOST', 'smtp.example.com')
+    monkeypatch.setenv('SMTP_USER', 'hr@example.com')
+    monkeypatch.setenv('SMTP_PASS', 'secret')
+
+    ok, detail = email_service.check_connection()
+    assert ok is True
+    assert 'smtp.example.com:587' in detail
+    assert fake_smtp.sent == []          # a check must not send mail
+
+
+def test_check_connection_explains_a_gmail_app_password(monkeypatch, fake_smtp):
+    fake_smtp.raises = smtplib.SMTPAuthenticationError(535, b'Username and Password not accepted')
+    monkeypatch.setenv('SMTP_HOST', 'smtp.gmail.com')
+    monkeypatch.setenv('SMTP_USER', 'hr@example.com')
+    monkeypatch.setenv('SMTP_PASS', 'not-an-app-password')
+
+    ok, detail = email_service.check_connection()
+    assert ok is False
+    assert 'App Password' in detail
+    assert 'Username and Password not accepted' in detail
+
+
+def test_check_connection_on_a_blocked_port(monkeypatch, fake_smtp):
+    fake_smtp.raises = OSError(101, 'Network is unreachable')
+    monkeypatch.setenv('SMTP_HOST', 'smtp.gmail.com')
+    monkeypatch.setenv('SMTP_USER', 'hr@example.com')
+
+    ok, detail = email_service.check_connection()
+    assert ok is False
+    assert 'RESEND_API_KEY' in detail
+
+
+def test_describe_never_returns_the_password(monkeypatch):
+    monkeypatch.setenv('SMTP_HOST', 'smtp.gmail.com')
+    monkeypatch.setenv('SMTP_USER', 'hr@example.com')
+    monkeypatch.setenv('SMTP_PASS', 'abcdefghijklmnop')
+
+    report = email_service.describe()
+    assert 'abcdefghijklmnop' not in repr(report)
+    assert report['smtp']['pass_length'] == 16
+    assert report['smtp']['pass_has_space'] is False

@@ -157,7 +157,51 @@ in `app.py`:
   logged. To keep those emails, call `scheduler.run_checks_now(app)` from a
   platform cron once a day.
 
-## Checking it
+## Checking it from a host with no shell
+
+Vercel has no shell tab, so the same checks are exposed over HTTP. Set
+`DIAGNOSTICS_TOKEN` in the environment (any long random string:
+`python -c "import secrets; print(secrets.token_urlsafe(24))"`), redeploy,
+then:
+
+```bash
+curl -H "X-Diagnostics-Token: $TOKEN" https://your-app.vercel.app/api/diagnostics/email
+```
+
+which reports what the running instance sees and whether it can sign in to
+the mail server — without sending anything:
+
+```json
+{
+  "transport": "smtp",
+  "from_address": "hr@example.com",
+  "smtp": { "host": "smtp.gmail.com", "port": 587, "user": "hr@example.com",
+            "pass_set": true, "pass_length": 16, "pass_has_space": false },
+  "connection": { "ok": true, "detail": "connected to smtp.gmail.com:587 and signed in as hr@example.com" }
+}
+```
+
+`pass_length` and `pass_has_space` are there because a Gmail App Password
+pasted with its spaces is the most common cause of a 535. No password or
+API key is ever returned.
+
+Then send a real one:
+
+```bash
+curl -X POST -H "X-Diagnostics-Token: $TOKEN" -H 'Content-Type: application/json' \
+     -d '{"to":"you@example.com"}' \
+     https://your-app.vercel.app/api/diagnostics/email/test
+```
+
+It answers `{"sent": true, ...}` or the exact reason it failed. A
+platform-admin JWT works in place of the token, and with `DIAGNOSTICS_TOKEN`
+unset the token route does not exist at all.
+
+If a send times out on Vercel, raise the function's `maxDuration` in
+`vercel.json` — an SMTP handshake plus login can take several seconds, and
+the send now happens before the response (see above).
+
+## Checking it from a terminal
 
 From the `backend` directory:
 
