@@ -31,9 +31,11 @@ log = logging.getLogger(__name__)
 
 # Ports a provider blocks are the ones nothing in this file can work around.
 BLOCKED_PORT_HINT = (
-    'the host cannot open an outbound SMTP connection (this is what Render '
-    'does on free instances) — set RESEND_API_KEY, BREVO_API_KEY or '
-    'SENDGRID_API_KEY to send over HTTPS instead'
+    'the host cannot open an outbound SMTP connection (free Render instances '
+    'block ports 25, 465 and 587) — either keep SMTP and point SMTP_HOST/'
+    'SMTP_PORT at a relay that listens on 2525, or set RESEND_API_KEY, '
+    'BREVO_API_KEY or SENDGRID_API_KEY to send over HTTPS. '
+    'Run scripts/test_email.py --probe on the host to see which ports are open'
 )
 
 HTTP_TIMEOUT = int(os.getenv('EMAIL_HTTP_TIMEOUT', 20))

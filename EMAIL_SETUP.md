@@ -75,12 +75,66 @@ demo request. The log line becomes:
 INFO [services.email_service] Email sent via brevo: Your Infopace HR demo request -> ...
 ```
 
+## Keeping SMTP
+
+If you would rather not change how the app sends mail, SMTP can still work —
+but not against Gmail on a free Render instance. Render's changelog is
+explicit:
+
+> Free web services can't send outbound network traffic on ports 25, 465, or
+> 587, commonly used for SMTP.
+>
+> — <https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports>
+
+Those three ports are the only ones named. Relay providers also listen on
+**2525** for exactly this situation, and Gmail does not offer it at all — so
+there are two SMTP routes:
+
+### Route 1: an SMTP relay on port 2525 (stays free)
+
+Check first, from the Render **Shell** tab, what this instance can reach:
+
+```bash
+cd backend && python scripts/test_email.py --probe
+```
+
+It opens one TCP connection per port and prints which answered. If 2525 is
+open, sign up with a relay, take its SMTP credentials — not your Gmail
+password — and set:
+
+```
+SMTP_HOST=smtp-relay.brevo.com     # SendGrid: smtp.sendgrid.net
+SMTP_PORT=2525                     # Mailgun:  smtp.mailgun.org
+SMTP_USER=<the provider's SMTP login>
+SMTP_PASS=<the provider's SMTP key>
+SMTP_FROM=support@infopaceindia.com   # verified with the provider
+```
+
+Leave `RESEND_API_KEY` / `BREVO_API_KEY` / `SENDGRID_API_KEY` unset and the
+app uses SMTP, exactly as it does locally. Verify with:
+
+```bash
+python scripts/test_email.py --to you@example.com
+```
+
+### Route 2: a paid Render instance
+
+Upgrading the service to any paid instance type unblocks 465 and 587, and
+your existing Gmail settings then work untouched. Port 25 stays blocked
+everywhere, so leave `SMTP_PORT` at 587.
+
+Note that Gmail app-password sending is rate limited (roughly 500
+recipients/day on a personal account) and Google increasingly rejects SMTP
+logins from cloud IP ranges, so a relay is steadier even once the port is
+open.
+
 ## Checking it
 
 From the `backend` directory:
 
 ```bash
 python scripts/test_email.py                      # report the configuration
+python scripts/test_email.py --probe              # which SMTP ports are open
 python scripts/test_email.py --to you@example.com # send a real test message
 ```
 

@@ -8,6 +8,7 @@ This walks the same steps by hand and prints where it stopped.
 
     python scripts/test_email.py
     python scripts/test_email.py --to someone@example.com
+    python scripts/test_email.py --probe          # which SMTP ports are open
 
 It checks whichever transport the environment selects: a provider HTTP API
 when one has a key, SMTP otherwise. Run it from the backend directory so it
@@ -79,14 +80,58 @@ def explain(e):
         return ('The host is not allowed to open an outbound SMTP connection.',
                 ['This is what a free Render instance does: ports 25, 465 and 587 '
                  'are blocked, so no SMTP setting can fix it.',
-                 'Send over HTTPS instead — set RESEND_API_KEY, BREVO_API_KEY or '
-                 'SENDGRID_API_KEY, plus EMAIL_FROM, and redeploy.',
-                 'See EMAIL_SETUP.md for the five-minute version.'])
+                 'To keep SMTP: use a relay that listens on 2525 (Brevo, SendGrid, '
+                 'Mailgun) and set SMTP_PORT=2525. Gmail has no 2525, so Gmail SMTP '
+                 'cannot work here.',
+                 'Run --probe to see which ports this host can actually reach.',
+                 'Or send over HTTPS: set RESEND_API_KEY, BREVO_API_KEY or '
+                 'SENDGRID_API_KEY plus EMAIL_FROM.',
+                 'See EMAIL_SETUP.md.'])
     if isinstance(e, (ConnectionRefusedError, smtplib.SMTPConnectError, OSError)):
         return ('Could not reach the mail server at all.',
                 ['Check SMTP_HOST is spelled correctly (smtp.gmail.com for Gmail).',
                  'Check you are online and that outbound port 587 is not blocked.'])
     return (type(e).__name__, [str(e)[:200]])
+
+
+PROBE_PORTS = (587, 465, 2525, 25)
+
+
+def probe(host):
+    """Which SMTP ports this host can actually open a socket to.
+
+    Worth running before anything else on a host that may filter egress: a
+    free Render instance blocks 25, 465 and 587, and the only way to know
+    what is left is to try. Nothing is sent — this is one TCP connect per
+    port, closed immediately."""
+    print(f'\nProbing outbound SMTP ports to {host}')
+    open_ports = []
+    for port in PROBE_PORTS:
+        try:
+            with socket.create_connection((host, port), timeout=8):
+                print(f'{OK} {port:<5} open')
+                open_ports.append(port)
+        except OSError as e:
+            reason = f'errno {e.errno} — {e.strerror or e}' if e.errno else str(e)
+            print(f'{BAD} {port:<5} {reason}')
+
+    print()
+    if not open_ports:
+        print('No SMTP port is reachable from here. Either this host blocks '
+              'outbound SMTP entirely,')
+        print(f'or {host} is wrong. On a free Render instance it is the first '
+              'one: use a provider API')
+        print('(RESEND_API_KEY / BREVO_API_KEY / SENDGRID_API_KEY over HTTPS), '
+              'or upgrade the instance.')
+        return 1
+    if 2525 in open_ports and not {587, 465} & set(open_ports):
+        print('Only 2525 is open, which is the relay port. Keep SMTP and set '
+              'SMTP_PORT=2525')
+        print('against a relay that listens on it (Brevo, SendGrid, Mailgun). '
+              'Gmail does not.')
+        return 0
+    print(f'Usable: {", ".join(str(p) for p in open_ports)}. Set SMTP_PORT to one of these.')
+    return 0
 
 
 def check_provider(name, args):
@@ -121,7 +166,13 @@ def check_provider(name, args):
 def main():
     ap = argparse.ArgumentParser(description='Diagnose the email configuration.')
     ap.add_argument('--to', help='send a real test message to this address')
+    ap.add_argument('--probe', action='store_true',
+                    help='report which outbound SMTP ports this host can reach, and stop')
     args = ap.parse_args()
+
+    if args.probe:
+        return probe(os.getenv('SMTP_HOST') or os.getenv('SMTP_SERVER')
+                     or 'smtp-relay.brevo.com')
 
     from services.email_service import transport
     name = transport()
