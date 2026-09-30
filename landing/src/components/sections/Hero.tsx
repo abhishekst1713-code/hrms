@@ -2,7 +2,7 @@ import { ArrowRightIcon, PlayCircleIcon } from '@phosphor-icons/react';
 import HeroDashboard from './HeroDashboard';
 
 /* The cycling word. Kept to a similar length so the stacked cell stays tight. */
-const VERBS = ['Transform', 'Automate', 'Simplify', 'Unify'];
+const VERBS = ['Unify', 'Automate', 'Simplify', 'Control'];
 
 export default function Hero() {
   return (
@@ -20,25 +20,26 @@ export default function Hero() {
             <div className="rise rise-1 mb-6 inline-flex items-center gap-2 rounded-full
                           border border-hairline-blue bg-surface px-3 py-1.5">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <span className="t-micro text-ink-2">Infopace, operating since 1999</span>
+              <span className="t-micro text-ink-2">Serving Indian enterprises since 1999</span>
             </div>
 
             <h1 className="rise rise-2 t-hero max-w-[21ch] text-ink xl:max-w-[24ch]">
               {/* One accessible label; the animation is decoration over it. */}
-              <span className="sr-only">Transform HR operations with intelligent automation</span>
+              <span className="sr-only">Unify HR operations on one employee record</span>
               <span aria-hidden>
                 <span className="wordcycle text-brand-700">
                   {VERBS.map((w, i) => (
                     <span key={w} style={{ animationDelay: `${i * 3}s` }}>{w}</span>
                   ))}
                 </span>{' '}
-                HR operations with intelligent automation
+                HR operations on one employee record
               </span>
             </h1>
 
             <p className="rise rise-3 t-body-xl mt-6 max-w-[54ch] text-ink-2">
-              Employee records, attendance, leave, payroll and letters on one
-              record, with the statutory maths and the approval chain built in.
+              Attendance, leave, payroll, letters and appraisals run off the same
+              record, with PF, ESI, professional tax and TDS computed on every
+              run and your approval chain enforced at each stage.
             </p>
 
             <div className="rise rise-4 mt-9 flex flex-wrap items-center gap-3">

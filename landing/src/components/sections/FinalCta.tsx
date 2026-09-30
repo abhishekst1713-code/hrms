@@ -14,12 +14,12 @@ const API = import.meta.env.DEV
   : '';
 
 const STEPS = [
-  { n: 1, t: 'Book a demo',
-    d: 'Share your name, company and how to reach you.' },
-  { n: 2, t: 'Guided walkthrough',
-    d: 'We show you the records, leave, attendance and payroll screens for your roles.' },
+  { n: 1, t: 'Tell us how HR runs today',
+    d: 'Your name, company and a number we can reach you on. Nothing more.' },
+  { n: 2, t: 'Walkthrough on your structure',
+    d: 'Your departments, your leave policy, your payroll setup — not a generic tour.' },
   { n: 3, t: 'Go live',
-    d: 'We set up your tenant, roles and first records with you.' },
+    d: 'We configure your tenant, roles and first records alongside your team.' },
 ];
 
 type State = 'idle' | 'sending' | 'sent' | 'error';
@@ -122,8 +122,8 @@ export default function FinalCta() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7, ease: EASE }}
-              className="t-display max-w-[14ch] text-balance text-white">
-              Ready to bring your HR onto one record?
+              className="t-display max-w-[17ch] text-balance text-white">
+              Ready to bring your HR workflows under control?
             </motion.h2>
 
             <motion.p
@@ -132,8 +132,9 @@ export default function FinalCta() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="t-body-xl mt-6 max-w-[46ch] text-[var(--on-deep-2)]">
-              Tell us where to reach you and we will show you the platform with
-              your own setup in mind.
+              Tell us how your HR runs today and we will walk you through the
+              platform against your own structure — departments, leave policy
+              and payroll setup.
             </motion.p>
 
             <motion.div

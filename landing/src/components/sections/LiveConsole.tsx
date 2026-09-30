@@ -187,7 +187,7 @@ export default function LiveConsole() {
                     )}
                   </ul>
                   <p className="mt-3 text-[11px] text-ink-3">
-                    Showing {staff.length} of {STAFF.length}. Try the search and the filters.
+                    Showing {staff.length} of {STAFF.length}. Type in the search box or pick a filter.
                   </p>
                 </div>
               )}
@@ -271,7 +271,7 @@ export default function LiveConsole() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-[13px] font-700 text-ink">September 2026</p>
-                      <p className="text-[11px] text-ink-3">16 employees in this run</p>
+                      <p className="text-[11px] text-ink-3">20 employees in this run</p>
                     </div>
                     <button type="button" onClick={runPayroll}
                       className={`inline-flex min-h-11 items-center gap-2 rounded-[8px] px-4 text-[12px]
@@ -323,7 +323,7 @@ export default function LiveConsole() {
                     </table>
                   </div>
                   <p className="mt-3 text-[11px] text-ink-3">
-                    Net pay resolves once the run completes. Press the button.
+                    Net pay resolves once the run completes. Press Run payroll.
                   </p>
                 </div>
               )}

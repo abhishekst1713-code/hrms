@@ -32,7 +32,7 @@ export default function StatutoryRegister() {
                          bg-surface-tint px-5 py-3.5">
         <div>
           <p className="text-[13px] font-800 text-ink">Statutory compliance register</p>
-          <p className="t-micro text-ink-3">September 2026 · 16 employees</p>
+          <p className="t-micro text-ink-3">September 2026 · 20 employees</p>
         </div>
         <span className="chip bg-[color-mix(in_srgb,var(--good)_12%,transparent)] text-[var(--good)]">
           Reconciled
