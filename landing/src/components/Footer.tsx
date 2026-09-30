@@ -1,19 +1,19 @@
 const COLUMNS = [
   { title: 'Platform', links: [
-    { label: 'The platform', href: '#platform' },
+    { label: 'Modules', href: '#platform' },
     { label: 'How it works', href: '#journey' },
     { label: 'The product', href: '#product' },
     { label: 'Reporting', href: '#reporting' },
   ]},
+  { title: 'Modules', links: [
+    { label: 'Payroll and statutory', href: '#platform' },
+    { label: 'Leave and attendance', href: '#platform' },
+    { label: 'Letters and templates', href: '#platform' },
+    { label: 'API, webhooks and audit', href: '#platform' },
+  ]},
   { title: 'Company', links: [
     { label: 'Infopace Management', href: 'https://www.infopaceindia.com' },
     { label: 'Book a demo', href: '#book' },
-  ]},
-  // Sales and support both reachable without filling in a form, which is the
-  // first thing an enterprise buyer looks for in a footer.
-  { title: 'Talk to us', links: [
-    { label: 'support@infopaceindia.com', href: 'mailto:support@infopaceindia.com' },
-    { label: 'www.infopaceindia.com', href: 'https://www.infopaceindia.com' },
   ]},
 ];
 
@@ -21,7 +21,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-hairline bg-surface py-16">
       <div className="rail">
-        <div className="grid gap-10 md:grid-cols-[1.6fr_repeat(3,1fr)]">
+        <div className="grid gap-10 md:grid-cols-[1.5fr_repeat(3,1fr)]">
           <div>
             {/* the footer has room for the full lockup, tagline and all */}
             <img src="/infopace-lockup.webp" alt="Infopace, commitment to excellence"
@@ -52,7 +52,9 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-hairline pt-6">
           <p className="t-small text-ink-3">&copy; 2026 Infopace Management Pvt Ltd</p>
-          <p className="t-small text-ink-3">Multi-tenant. Role based. Audited.</p>
+          <p className="t-small text-ink-3">
+            Figures and quotes shown on this page are illustrative.
+          </p>
         </div>
       </div>
     </footer>

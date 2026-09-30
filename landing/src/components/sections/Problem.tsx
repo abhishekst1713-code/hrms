@@ -130,7 +130,7 @@ export default function Problem() {
           </h2>
           <p className="t-body-xl mt-5 text-ink-2">
             Five things that quietly add days to every cycle. Scroll, and the
-            ledger on the right keeps a running estimate of the cost.
+            ledger on the right keeps count.
           </p>
         </div>
 
@@ -192,6 +192,10 @@ export default function Problem() {
                 </a>
               </div>
             </div>
+
+            <p className="t-micro mt-3 normal-case tracking-normal text-ink-3">
+              Day counts are illustrative, for framing a conversation.
+            </p>
           </div>
         </div>
       </div>

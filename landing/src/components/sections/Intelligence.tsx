@@ -17,7 +17,7 @@ const SOURCES = [
 ];
 
 const AUDIT = [
-  { who: 'Priyanka Nair', did: 'released payslips', what: 'September 2026, 20 employees', ago: '2h' },
+  { who: 'Priyanka Nair', did: 'released payslips', what: 'September 2026, 16 employees', ago: '2h' },
   { who: 'Ananya Krishnamurthy', did: 'approved leave', what: 'MT108, 3 days casual', ago: '5h' },
   { who: 'Priyanka Nair', did: 'generated offer letter', what: 'v2, revised terms', ago: '1d' },
 ];
@@ -52,12 +52,11 @@ export default function Intelligence() {
             <ChartLineUpIcon size={15} weight="bold" aria-hidden /> Reporting and compliance
           </p>
           <h2 className="t-h2 mt-4 text-balance text-white">
-            Reporting that traces back to the run
+            The month, read back to you
           </h2>
           <p className="t-body-xl mt-5 text-[var(--on-deep-2)]">
             Headcount and the statutory register are derived from the payroll runs
-            you actually processed, so every figure can be traced to the record
-            behind it. Nothing here is keyed in twice.
+            you actually processed. Nothing here is keyed in twice.
           </p>
         </div>
 

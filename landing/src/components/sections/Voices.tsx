@@ -72,8 +72,8 @@ export default function Voices() {
       <div className="rail">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-[50ch]">
-            <Eyebrow>In practice</Eyebrow>
-            <h2 className="t-h2 mt-4 text-balance text-ink">What changes for the people who sign off</h2>
+            <Eyebrow>Voices</Eyebrow>
+            <h2 className="t-h2 mt-4 text-balance text-ink">Written for the people who sign off</h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -132,12 +132,6 @@ export default function Voices() {
             className={`h-1.5 rounded-full transition-all duration-300
               ${i === active ? 'w-6 bg-brand-500' : 'w-1.5 bg-hairline'}`} />
         ))}
-      </div>
-
-      <div className="rail mt-4">
-        <p className="t-micro normal-case tracking-normal text-ink-3">
-          Illustrative quotes, by role and sector.
-        </p>
       </div>
 
       <div className="rail mt-12">
