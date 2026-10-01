@@ -32,7 +32,7 @@ export default function StatutoryRegister() {
   return (
     <div ref={ref} className="panel-float overflow-hidden">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline
-                         bg-surface-tint px-5 py-3">
+                         bg-surface-tint px-5 py-3.5">
         <div>
           <p className="text-[13px] font-800 text-ink">Statutory filing calendar</p>
           <p className="t-micro text-ink-3">September 2026 · 16 employees</p>
@@ -42,18 +42,18 @@ export default function StatutoryRegister() {
         </span>
       </header>
 
-      <div className="p-4">
-        <ul className="grid gap-2">
+      <div className="p-5">
+        <ul className="grid gap-2.5">
           {FILINGS.map((f, i) => (
             <motion.li key={f.k}
               initial={reduced ? false : { opacity: 0, y: 10 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.45, delay: i * 0.07, ease: EASE }}
-              className="flex items-center gap-3 rounded-[8px] border border-hairline px-3 py-2
+              className="flex items-center gap-3 rounded-[8px] border border-hairline px-3 py-2.5
                          transition-colors duration-200 hover:border-brand-400">
               {/* the due date leads: it is the thing with a deadline attached */}
               <span className="grid w-[52px] shrink-0 place-items-center rounded-[6px]
-                               bg-surface-tint py-1">
+                               bg-surface-tint py-1.5">
                 <span className="tnum text-[13px] font-800 leading-none text-ink">
                   {f.due.split(' ')[0]}
                 </span>
@@ -82,8 +82,8 @@ export default function StatutoryRegister() {
           initial={reduced ? false : { opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.5, delay: 0.45, ease: EASE }}
-          className="mt-4 flex flex-wrap items-baseline justify-between gap-2 border-t
-                     border-hairline pt-3">
+          className="mt-5 flex flex-wrap items-baseline justify-between gap-2 border-t
+                     border-hairline pt-4">
           <p className="t-micro text-ink-3">Due this cycle</p>
           <p className="tnum text-[19px] font-800 text-ink">₹92,620</p>
         </motion.div>
