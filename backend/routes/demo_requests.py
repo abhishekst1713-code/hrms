@@ -3,8 +3,8 @@ routes/demo_requests.py — the public "Book a demo" form on the marketing
 site.
 
 This is the only unauthenticated write endpoint in the API, so it is
-deliberately narrow: one POST, one email field, rate limited, with a
-honeypot for bots. Reads are platform-admin only.
+deliberately narrow: one POST with name, phone, company and email, rate
+limited, with a honeypot for bots. Reads are platform-admin only.
 
 Leads are NOT tenant data — a visitor has no tenant yet — so this uses
 the raw `current_app.db` rather than tenant_scope.get_db(), the same way
@@ -21,7 +21,8 @@ from flask import Blueprint, current_app, jsonify, request
 
 from auth_utils import platform_admin_required
 from extensions import limiter
-from services.email_service import from_address, send_email, is_configured
+from runtime_env import background_work_survives_response
+from services.email_service import from_address, is_configured, send_email
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +41,12 @@ LOCAL_TYPO_RE = re.compile(r'^\.|\.$|\.\.|^www\.', re.I)
 
 MAX_EMAIL_LEN = 254        # RFC limit, also caps the stored value
 SOURCE_MAX_LEN = 60
+NAME_MAX_LEN = 120
+COMPANY_MAX_LEN = 160
+
+# Digits with the usual separators and an optional leading +. The digit
+# count is checked separately: 7 to 15, the E.164 ceiling.
+PHONE_RE = re.compile(r'^\+?[\d\s()\-.]+$')
 
 
 def _text(value) -> str:
@@ -84,9 +91,13 @@ Infopace Management Pvt Ltd
 """
 
 
-def _notification_body(email: str, source: str, when: datetime) -> str:
+def _notification_body(email: str, source: str, when: datetime,
+                       name: str = '', phone: str = '', company: str = '') -> str:
     return f"""New demo request received from the website.
 
+  Name       : {name}
+  Company    : {company}
+  Phone      : {phone}
   Email      : {email}
   Source     : {source or 'landing'}
   Received   : {when.strftime('%d %b %Y, %H:%M')} UTC
@@ -119,6 +130,25 @@ def create_demo_request():
         return jsonify({'error': 'That address does not look right. '
                                  'Check for a stray "www." or a misplaced dot.'}), 400
 
+    name = ' '.join(_text(data.get('name')).split())
+    if not name:
+        return jsonify({'error': 'Enter your name.'}), 400
+    if len(name) > NAME_MAX_LEN:
+        return jsonify({'error': 'That name is too long.'}), 400
+
+    phone = _text(data.get('phone'))
+    phone_digits = re.sub(r'\D', '', phone)
+    if not phone or not PHONE_RE.match(phone) or not 7 <= len(phone_digits) <= 15:
+        return jsonify({'error': 'Enter a valid phone number.'}), 400
+
+    # 'company_name', not 'company': 'company_website' is the honeypot and
+    # the two must not be confused.
+    company = ' '.join(_text(data.get('company_name')).split())
+    if not company:
+        return jsonify({'error': 'Enter your company name.'}), 400
+    if len(company) > COMPANY_MAX_LEN:
+        return jsonify({'error': 'That company name is too long.'}), 400
+
     source = _text(data.get('source'))[:SOURCE_MAX_LEN] or 'landing'
     now = datetime.utcnow()
     db = current_app.db          # platform-level, not tenant-scoped
@@ -128,10 +158,12 @@ def create_demo_request():
     result = db.demo_requests.update_one(
         {'email': email},
         {
-            # mail_triggered resets to False here because a fresh send is
-            # about to be attempted (or skipped, if email isn't configured);
-            # it only flips to True once _send_mail confirms delivery below.
-            '$set':      {'email': email, 'source': source,
+            # contact details follow the latest submission; mail_triggered
+            # resets to False here because a fresh send is about to be
+            # attempted (or skipped, if email isn't configured) — it only
+            # flips to True once _send_mail confirms delivery below.
+            '$set':      {'email': email, 'name': name, 'phone': phone,
+                          'company_name': company, 'source': source,
                           'last_requested_at': now, 'updated_at': now,
                           'mail_triggered': False},
             '$inc':      {'request_count': 1},
@@ -144,28 +176,29 @@ def create_demo_request():
     is_new = result.upserted_id is not None
     log.info('demo request stored (%s): %s', 'new' if is_new else 'repeat', email)
 
-    # The lead is safe now, so nobody should wait on the mail server. Sending
-    # inline made the visitor sit through the full round trip — seven seconds
-    # on a good day, fifteen when the server was refusing us, all of it after
-    # the work that mattered was already done. send_email swallows and
-    # logs its own failures, so the thread cannot take anything down with it.
+    # The lead is safe now, so nobody should wait on the mail server: send on
+    # a thread where the host keeps threads alive after the response, inline
+    # on a serverless host that freezes them. send_email swallows and logs
+    # its own failures, so neither path can take the request down with it.
     configured = is_configured()
-    if configured:
-        threading.Thread(target=_send_mail, args=(db, email, source, now),
+    if configured and background_work_survives_response():
+        threading.Thread(target=_send_mail,
+                         args=(db, email, source, now, name, phone, company),
                          name=f'demo-mail-{email}', daemon=True).start()
+    elif configured:
+        _send_mail(db, email, source, now, name, phone, company)
     else:
         log.warning('demo request stored but email is not configured, no mail sent: %s', email)
 
-    # 'queued' rather than 'sent': at this point the request has been handed to
-    # a thread and nothing has been delivered yet, so the page promises a
-    # confirmation only when there is a mail server to send one.
     return jsonify({'ok': True, 'emailed': {'confirmation': configured,
                                             'notification': configured},
                     'queued': configured}), 201
 
 
-def _send_mail(db, email: str, source: str, when: datetime):
-    """Runs off the request thread. Failures are logged by send_email.
+def _send_mail(db, email: str, source: str, when: datetime,
+               name: str = '', phone: str = '', company: str = ''):
+    """Runs off the request thread (or inline on a serverless host).
+    Failures are logged by send_email.
 
     mail_triggered reflects only the confirmation email to the lead
     (the one the visitor is actually waiting on) — True once send_email
@@ -181,7 +214,7 @@ def _send_mail(db, email: str, source: str, when: datetime):
     notify_to = _notify_address()
     if notify_to:
         send_email(notify_to, f'Demo request: {email}',
-                   _notification_body(email, source, when),
+                   _notification_body(email, source, when, name, phone, company),
                    from_label='Infopace HR website')
     else:
         log.warning('demo request: no DEMO_NOTIFY_EMAIL or send-as address set, team not notified')

@@ -128,7 +128,80 @@ recipients/day on a personal account) and Google increasingly rejects SMTP
 logins from cloud IP ranges, so a relay is steadier even once the port is
 open.
 
-## Checking it
+## On Vercel
+
+Vercel's own guidance is that **port 25 is blocked and 465 and 587 are
+open** (<https://vercel.com/kb/guide/serverless-functions-and-smtp>), so
+plain SMTP works there — including Gmail with an app password, at
+`SMTP_PORT=587`. The provider API route works too, and is still steadier
+under load.
+
+The catch is not the port, it is the lifecycle: a serverless instance is
+frozen as soon as the response is written, so anything handed to a
+background thread is paused mid-flight and usually never resumes — no
+error, no email. The demo-request endpoint used to hand its mail to a
+thread for exactly the right reason (not making the visitor wait), so
+`runtime_env.background_work_survives_response()` now decides: a thread on
+a container, inline on a serverless host. Nothing to configure;
+`FORCE_INLINE_WORK=1` reproduces the inline path locally.
+
+Two other things change shape on a serverless host, both handled at import
+in `app.py`:
+
+- **Storage.** The filesystem is read-only apart from the temp directory,
+  so `STORAGE_ROOT` falls back to `/tmp/hrms-storage`. That is per-instance
+  and wiped between invocations — fine, because durable files go to GridFS,
+  but do not expect anything left on disk to still be there.
+- **The daily scheduler** (birthday and anniversary mail) is a thread that
+  waits for 09:00 and cannot run. It is not started, and the reason is
+  logged. To keep those emails, call `scheduler.run_checks_now(app)` from a
+  platform cron once a day.
+
+## Checking it from a host with no shell
+
+Vercel has no shell tab, so the same checks are exposed over HTTP. Set
+`DIAGNOSTICS_TOKEN` in the environment (any long random string:
+`python -c "import secrets; print(secrets.token_urlsafe(24))"`), redeploy,
+then:
+
+```bash
+curl -H "X-Diagnostics-Token: $TOKEN" https://your-app.vercel.app/api/diagnostics/email
+```
+
+which reports what the running instance sees and whether it can sign in to
+the mail server — without sending anything:
+
+```json
+{
+  "transport": "smtp",
+  "from_address": "hr@example.com",
+  "smtp": { "host": "smtp.gmail.com", "port": 587, "user": "hr@example.com",
+            "pass_set": true, "pass_length": 16, "pass_has_space": false },
+  "connection": { "ok": true, "detail": "connected to smtp.gmail.com:587 and signed in as hr@example.com" }
+}
+```
+
+`pass_length` and `pass_has_space` are there because a Gmail App Password
+pasted with its spaces is the most common cause of a 535. No password or
+API key is ever returned.
+
+Then send a real one:
+
+```bash
+curl -X POST -H "X-Diagnostics-Token: $TOKEN" -H 'Content-Type: application/json' \
+     -d '{"to":"you@example.com"}' \
+     https://your-app.vercel.app/api/diagnostics/email/test
+```
+
+It answers `{"sent": true, ...}` or the exact reason it failed. A
+platform-admin JWT works in place of the token, and with `DIAGNOSTICS_TOKEN`
+unset the token route does not exist at all.
+
+If a send times out on Vercel, raise the function's `maxDuration` in
+`vercel.json` — an SMTP handshake plus login can take several seconds, and
+the send now happens before the response (see above).
+
+## Checking it from a terminal
 
 From the `backend` directory:
 

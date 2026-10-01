@@ -10,8 +10,14 @@ import { EASE } from '../../lib/motion';
  * swap sides, and the media parallaxes a little against the copy so
  * the rhythm is felt rather than just seen.
  */
-function Block({ flip, children, media }: {
-  flip?: boolean; children: React.ReactNode; media: React.ReactNode;
+function Block({ flip, center, children, media }: {
+  flip?: boolean;
+  /** Vertically centre the text against the media instead of aligning both
+      to the top — for a block whose media is noticeably taller than its
+      two lines of copy, so the text doesn't read as pinned to the top of
+      empty space. */
+  center?: boolean;
+  children: React.ReactNode; media: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
@@ -19,7 +25,8 @@ function Block({ flip, children, media }: {
   const y = useTransform(scrollYProgress, [0, 1], [26, -26]);
 
   return (
-    <div ref={ref} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div ref={ref}
+         className={`grid gap-10 lg:grid-cols-2 lg:gap-16 ${center ? 'items-center' : 'items-start'}`}>
       <motion.div
         initial={reduced ? false : { opacity: 0, x: flip ? 30 : -30 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -40,14 +47,14 @@ export default function Benefits() {
   // x +/-30px, so a block still waiting to animate in sat 30px off the rail and
   // widened the document on a phone. clip does not create a scroll container.
   return (
-    <section className="overflow-x-clip bg-surface py-24 lg:py-32">
+    <section className="overflow-x-clip bg-surface py-16 lg:py-24">
       <div className="rail">
         <div className="max-w-[54ch]">
           <Eyebrow>Outcomes</Eyebrow>
           <h2 className="t-h2 mt-4 text-balance text-ink">What changes once it is running</h2>
         </div>
 
-        <div className="mt-16 grid gap-24 lg:gap-32">
+        <div className="mt-10 grid gap-12 lg:gap-16">
           <Block media={
             <div className="panel-float p-7">
               <div className="flex items-center justify-between gap-3">
@@ -65,7 +72,7 @@ export default function Benefits() {
                 </div>
               </div>
               <div className="mt-6 border-t border-hairline pt-5">
-                <BarRows suffix="h" ariaLabel="Manual hours by stage"
+                <BarRows suffix="h" scrub ariaLabel="Manual hours by stage"
                   rows={[
                     { label: 'Collecting inputs', value: 3 },
                     { label: 'Chasing managers', value: 2, tone: 'var(--c3)' },
@@ -106,7 +113,7 @@ export default function Benefits() {
             </p>
           </Block>
 
-          <Block media={
+          <Block center media={
             <div className="grid grid-cols-2 gap-4">
               <div className="panel grid place-items-center p-6">
                 <Gauge value={100} label="Records scoped to a tenant" size={124} />

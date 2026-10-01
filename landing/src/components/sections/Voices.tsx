@@ -68,7 +68,7 @@ export default function Voices() {
   }, []);
 
   return (
-    <section className="overflow-hidden bg-surface py-24 lg:py-32">
+    <section className="overflow-hidden bg-surface py-16 lg:py-24">
       <div className="rail">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-[50ch]">

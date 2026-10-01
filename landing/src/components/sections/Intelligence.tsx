@@ -1,9 +1,11 @@
 import { useRef } from 'react';
-import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react';
+import {
+  motion, useScroll, useSpring, useTransform, useReducedMotion, type MotionValue,
+} from 'motion/react';
 import { ShieldCheckIcon, ListChecksIcon, ChartLineUpIcon } from '@phosphor-icons/react';
 import { TrendLine } from '../charts';
 import { Counter } from '../primitives';
-import { EASE } from '../../lib/motion';
+import { DRAW_OFFSET, DRAW_SPRING, EASE } from '../../lib/motion';
 
 const HEADCOUNT = [14, 15, 15, 16, 16, 17, 17, 18, 19, 19, 20, 20];
 const MONTHS = ['Oct','','Dec','','Feb','','Apr','','Jun','','Aug','Sep'];
@@ -22,12 +24,34 @@ const AUDIT = [
   { who: 'Priyanka Nair', did: 'generated offer letter', what: 'v2, revised terms', ago: '1d' },
 ];
 
+/**
+ * One segment of the source bar. Each takes its share of the playhead in
+ * turn, so the three fill left to right rather than all at once.
+ */
+function Segment({ pct, tone, order, fill, reduced }: {
+  pct: number; tone: string; order: number;
+  fill: MotionValue<number>; reduced: boolean;
+}) {
+  const start = order * 0.22;
+  const width = useTransform(fill, [start, start + 0.5], ['0%', `${pct}%`], { clamp: true });
+  return (
+    <motion.span className="h-full first:rounded-l-full last:rounded-r-full"
+      style={{ background: tone, width: reduced ? `${pct}%` : width }} />
+  );
+}
+
 export default function Intelligence() {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const gridY = useTransform(scrollYProgress, [0, 1], ['-6%', '6%']);
   const glowY = useTransform(scrollYProgress, [0, 1], ['12%', '-12%']);
+
+  // The source bar fills on the same scroll playhead as the trend line beside
+  // it, so the two cards move together as the section is read.
+  const bar = useRef<HTMLDivElement>(null);
+  const barScroll = useScroll({ target: bar, offset: [...DRAW_OFFSET] }).scrollYProgress;
+  const fill = useSpring(barScroll, DRAW_SPRING);
 
   return (
     <section id="reporting" ref={ref}
@@ -52,11 +76,11 @@ export default function Intelligence() {
             <ChartLineUpIcon size={15} weight="bold" aria-hidden /> Reporting and compliance
           </p>
           <h2 className="t-h2 mt-4 text-balance text-white">
-            The month, read back to you
+            Reporting that traces back to the payroll run
           </h2>
           <p className="t-body-xl mt-5 text-[var(--on-deep-2)]">
-            Headcount and the statutory register are derived from the payroll runs
-            you actually processed. Nothing here is keyed in twice.
+            Headcount and the statutory register read straight off the runs
+            you actually processed — nothing here is keyed in twice.
           </p>
         </div>
 
@@ -71,7 +95,7 @@ export default function Intelligence() {
               </div>
             </div>
             <div className="mt-5">
-              <TrendLine data={HEADCOUNT} labels={MONTHS} height={190} color="var(--d1)" trace
+              <TrendLine data={HEADCOUNT} labels={MONTHS} height={190} color="var(--d1)" trace scrub
                 ariaLabel="Headcount rising from fourteen to twenty over twelve months." />
             </div>
             <dl className="mt-5 grid grid-cols-3 gap-4 border-t border-white/10 pt-5">
@@ -98,16 +122,11 @@ export default function Intelligence() {
               </div>
               <p className="t-small mt-1 text-[var(--on-deep-2)]">September, 304 daily records</p>
 
-              {/* one bar, three segments, each growing as the section arrives */}
-              <div className="mt-5 flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-white/10">
+              {/* one bar, three segments, filling on the scroll playhead */}
+              <div ref={bar} className="mt-5 flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-white/10">
                 {SOURCES.map((x, i) => (
-                  <motion.span key={x.k}
-                    className="h-full first:rounded-l-full last:rounded-r-full"
-                    style={{ background: x.tone }}
-                    initial={reduced ? false : { width: 0 }}
-                    whileInView={{ width: `${x.v}%` }}
-                    viewport={{ once: true, margin: '-12% 0px' }}
-                    transition={{ duration: 0.9, delay: 0.2 + i * 0.14, ease: EASE }} />
+                  <Segment key={x.k} pct={x.v} tone={x.tone} order={i}
+                           fill={fill} reduced={!!reduced} />
                 ))}
               </div>
 

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
   UsersThreeIcon, CheckCircleIcon, CurrencyInrIcon, ChartLineUpIcon,
-  MagnifyingGlassIcon, CheckIcon, XIcon, ArrowClockwiseIcon,
+  MagnifyingGlassIcon, CheckIcon, XIcon, ArrowClockwiseIcon, CaretDownIcon,
 } from '@phosphor-icons/react';
-import { TrendLine, BarRows } from '../charts';
+import { TrendLine } from '../charts';
 import { EASE } from '../../lib/motion';
 
 /* ---------------------------------------------------------------
@@ -12,13 +12,13 @@ import { EASE } from '../../lib/motion';
    but not a real customer's data.
    --------------------------------------------------------------- */
 const STAFF = [
-  { n: 'Tanvi Joshi',        c: 'MT116', r: 'Learning Coordinator',  d: 'Human Resources', s: 'Active' },
-  { n: 'Rekha Mohanty',      c: 'MT115', r: 'Shift Supervisor',      d: 'Manufacturing',   s: 'Active' },
-  { n: 'Nikhil Bhattacharya',c: 'MT114', r: 'Data Analyst',          d: 'Finance',         s: 'Active' },
-  { n: 'Lakshmi Iyer',       c: 'MT113', r: 'Compliance Officer',    d: 'Legal',           s: 'Active' },
-  { n: 'Sandeep Chauhan',    c: 'MT112', r: 'Warehouse Incharge',    d: 'Logistics',       s: 'Exiting' },
-  { n: 'Divya Balakrishnan', c: 'MT111', r: 'Recruitment Specialist',d: 'Human Resources', s: 'Active' },
-  { n: 'Karthik Raman',      c: 'MT110', r: 'Maintenance Engineer',  d: 'Facilities',      s: 'Active' },
+  { n: 'Tanvi Joshi',        c: 'MT116', r: 'Learning Coordinator',  d: 'Human Resources', s: 'Active',  bal: 12, since: 'Apr 2024' },
+  { n: 'Rekha Mohanty',      c: 'MT115', r: 'Shift Supervisor',      d: 'Manufacturing',   s: 'Active',  bal: 2,  since: 'Jan 2021' },
+  { n: 'Nikhil Bhattacharya',c: 'MT114', r: 'Data Analyst',          d: 'Finance',         s: 'Active',  bal: 8,  since: 'Aug 2023' },
+  { n: 'Lakshmi Iyer',       c: 'MT113', r: 'Compliance Officer',    d: 'Legal',           s: 'Active',  bal: 9,  since: 'Jun 2019' },
+  { n: 'Sandeep Chauhan',    c: 'MT112', r: 'Warehouse Incharge',    d: 'Logistics',       s: 'Exiting', bal: 4,  since: 'Mar 2022' },
+  { n: 'Divya Balakrishnan', c: 'MT111', r: 'Recruitment Specialist',d: 'Human Resources', s: 'Active',  bal: 14, since: 'Nov 2020' },
+  { n: 'Karthik Raman',      c: 'MT110', r: 'Maintenance Engineer',  d: 'Facilities',      s: 'Active',  bal: 7,  since: 'Feb 2018' },
 ];
 
 const LEAVE = [
@@ -34,40 +34,60 @@ const PAY = [
   { n: 'Nikhil Bhattacharya', c: 'MT114', g: 55900, ded: 2390 },
   { n: 'Lakshmi Iyer',        c: 'MT113', g: 71825, ded: 3982 },
   { n: 'Sandeep Chauhan',     c: 'MT112', g: 38675, ded: 1800 },
+  { n: 'Divya Balakrishnan',  c: 'MT111', g: 44300, ded: 1800 },
+  { n: 'Karthik Raman',       c: 'MT110', g: 33850, ded: 1800 },
 ];
+
+const DEPARTMENTS = ['Human Resources', 'Manufacturing', 'Finance', 'Logistics'];
 
 const TREND = [16,16,16,17,17,18,18,19,19,20,20,20];
 const MONTHS = ['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'];
 
 const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
+const payFor = (code: string) => PAY.find(r => r.c === code);
 const initials = (n: string) => n.split(' ').map(p => p[0]).slice(0,2).join('');
 
-const VIEWS = [
+export const VIEWS = [
   { id: 'directory', label: 'Employees', icon: UsersThreeIcon },
   { id: 'approvals', label: 'Approvals', icon: CheckCircleIcon },
   { id: 'payroll',   label: 'Payroll',   icon: CurrencyInrIcon },
   { id: 'analytics', label: 'Analytics', icon: ChartLineUpIcon },
 ] as const;
 
-type ViewId = typeof VIEWS[number]['id'];
+export type ViewId = typeof VIEWS[number]['id'];
 
 /* ---------------------------------------------------------------
    A working console rather than a picture of one: every filter,
    row, approval and payroll run below actually responds.
    --------------------------------------------------------------- */
-export default function LiveConsole() {
-  const [view, setView] = useState<ViewId>('directory');
+/**
+ * Controlled by the caller: Product.tsx owns `view` so the explainer list
+ * beside the console can drive it (and show which tab is current), rather
+ * than the console being a sealed box the list merely describes.
+ */
+export default function LiveConsole({ view, onViewChange }: {
+  view: ViewId; onViewChange: (v: ViewId) => void;
+}) {
+  const setView = onViewChange;
   const [filter, setFilter] = useState<'All' | 'Active' | 'Exiting'>('All');
   const [query, setQuery] = useState('');
+  const [open, setOpen] = useState<string | null>(null);
+  const [dept, setDept] = useState<string | null>(null);
   const [decided, setDecided] = useState<Record<string, 'approved' | 'rejected'>>({});
   const [runState, setRunState] = useState<'idle' | 'running' | 'done'>('idle');
   const reduced = useReducedMotion();
 
   const staff = STAFF.filter(p =>
     (filter === 'All' || p.s === filter) &&
+    (!dept || p.d === dept) &&
     (p.n.toLowerCase().includes(query.toLowerCase()) ||
      p.c.toLowerCase().includes(query.toLowerCase()) ||
      p.r.toLowerCase().includes(query.toLowerCase())));
+
+  /* Clicking a department in Analytics opens the directory already filtered,
+     which is the whole argument of the page: it is one record, not four
+     screens that happen to agree. */
+  const showDepartment = (d: string) => { setDept(d); setFilter('All'); setQuery(''); setOpen(null); setView('directory'); };
 
   const pending = LEAVE.filter(l => !decided[l.c]);
 
@@ -158,28 +178,78 @@ export default function LiveConsole() {
                     </div>
                   </div>
 
+                  {dept && (
+                    <motion.button type="button" onClick={() => setDept(null)}
+                      initial={reduced ? false : { opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                      className="mt-2.5 inline-flex min-h-9 items-center gap-1.5 rounded-full bg-brand-50
+                                 px-3 text-[12px] font-700 text-brand-700">
+                      {dept}
+                      <XIcon size={12} weight="bold" aria-hidden />
+                      <span className="sr-only">Clear the department filter</span>
+                    </motion.button>
+                  )}
+
                   <ul className="mt-3 divide-y divide-[var(--border)]">
-                    {staff.map((p, i) => (
+                    {staff.map((p, i) => {
+                      const shown = open === p.c;
+                      const slip = payFor(p.c);
+                      return (
                       <motion.li key={p.c}
                         initial={reduced ? false : { opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.25, delay: i * 0.03, ease: EASE }}
-                        className="group flex items-center gap-3 rounded-[8px] px-2 py-2.5
-                                   transition-colors hover:bg-surface-tint">
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full
-                                         bg-brand-50 text-[11px] font-800 text-brand-700">
-                          {initials(p.n)}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-700 text-ink">{p.n}</span>
-                          <span className="block truncate text-[11px] text-ink-3">{p.c} · {p.r}</span>
-                        </span>
-                        <span className="hidden text-[11px] text-ink-3 md:block">{p.d}</span>
-                        <span className={`chip shrink-0 ${p.s === 'Active'
-                          ? 'bg-[color-mix(in_srgb,var(--good)_12%,transparent)] text-[var(--good)]'
-                          : 'bg-accent-50 text-accent-700'}`}>{p.s}</span>
+                        transition={{ duration: 0.25, delay: i * 0.03, ease: EASE }}>
+                        <button type="button" aria-expanded={shown}
+                          onClick={() => setOpen(o => (o === p.c ? null : p.c))}
+                          className="group flex w-full items-center gap-3 rounded-[8px] px-2 py-2.5
+                                     text-left transition-colors hover:bg-surface-tint">
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full
+                                           bg-brand-50 text-[11px] font-800 text-brand-700">
+                            {initials(p.n)}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13px] font-700 text-ink">{p.n}</span>
+                            <span className="block truncate text-[11px] text-ink-3">{p.c} · {p.r}</span>
+                          </span>
+                          <span className="hidden text-[11px] text-ink-3 md:block">{p.d}</span>
+                          <span className={`chip shrink-0 ${p.s === 'Active'
+                            ? 'bg-[color-mix(in_srgb,var(--good)_12%,transparent)] text-[var(--good)]'
+                            : 'bg-accent-50 text-accent-700'}`}>{p.s}</span>
+                          <CaretDownIcon size={14} weight="bold" aria-hidden
+                            className={`shrink-0 text-ink-3 transition-transform duration-200
+                                        ${shown ? 'rotate-180 text-brand-700' : ''}`} />
+                        </button>
+
+                        {/* the same record, read from leave, payroll and the
+                            directory at once — the point the section is making */}
+                        <AnimatePresence initial={false}>
+                          {shown && (
+                            <motion.div key="detail"
+                              initial={reduced ? false : { height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={reduced ? undefined : { height: 0, opacity: 0 }}
+                              transition={{ duration: 0.26, ease: EASE }}
+                              className="overflow-hidden">
+                              <dl className="mx-2 mb-2.5 grid grid-cols-2 gap-x-4 gap-y-3
+                                             rounded-[8px] border border-hairline bg-surface-tint
+                                             p-3.5 sm:grid-cols-4">
+                                {[
+                                  { k: 'Department', v: p.d },
+                                  { k: 'With us since', v: p.since },
+                                  { k: 'Leave balance', v: `${p.bal} days` },
+                                  { k: 'September net', v: slip ? inr(slip.g - slip.ded) : '—' },
+                                ].map(f => (
+                                  <div key={f.k}>
+                                    <dt className="t-micro normal-case tracking-normal text-ink-3">{f.k}</dt>
+                                    <dd className="tnum mt-0.5 text-[13px] font-700 text-ink">{f.v}</dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </motion.li>
-                    ))}
+                      );
+                    })}
                     {!staff.length && (
                       <li className="py-10 text-center text-[13px] text-ink-3">
                         No records match “{query}”.
@@ -187,7 +257,8 @@ export default function LiveConsole() {
                     )}
                   </ul>
                   <p className="mt-3 text-[11px] text-ink-3">
-                    Showing {staff.length} of {STAFF.length}. Try the search and the filters.
+                    Showing {staff.length} of {STAFF.length}. Search, filter, or open a row
+                    to see the whole record.
                   </p>
                 </div>
               )}
@@ -320,10 +391,28 @@ export default function LiveConsole() {
                           </motion.tr>
                         ))}
                       </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-hairline">
+                          <th scope="row" className="py-2.5 text-left text-[12px] font-800 text-ink">
+                            Total, {PAY.length} shown
+                          </th>
+                          <td className="tnum py-2.5 text-right text-[13px] font-700 text-ink">
+                            {inr(PAY.reduce((t, r) => t + r.g, 0))}
+                          </td>
+                          <td className="tnum py-2.5 text-right text-[13px] font-700 text-accent-700">
+                            {inr(PAY.reduce((t, r) => t + r.ded, 0))}
+                          </td>
+                          <td className="tnum py-2.5 text-right text-[13px] font-800 text-ink">
+                            {runState === 'done'
+                              ? inr(PAY.reduce((t, r) => t + r.g - r.ded, 0))
+                              : '—'}
+                          </td>
+                        </tr>
+                      </tfoot>
                     </table>
                   </div>
                   <p className="mt-3 text-[11px] text-ink-3">
-                    Net pay resolves once the run completes. Press the button.
+                    Net pay resolves once the run completes. Press Run payroll.
                   </p>
                 </div>
               )}
@@ -348,14 +437,35 @@ export default function LiveConsole() {
                       ariaLabel="Headcount rising from 16 to 20 over twelve months." />
                   </div>
                   <div className="rounded-[8px] border border-hairline p-3">
-                    <p className="mb-2.5 text-[13px] font-700 text-ink">By department</p>
-                    <BarRows ariaLabel="Headcount by department"
-                      rows={[
-                        { label: 'Human Resources', value: 4 },
-                        { label: 'Manufacturing',   value: 3 },
-                        { label: 'Finance',         value: 3 },
-                        { label: 'Logistics',       value: 3 },
-                      ]} />
+                    <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="text-[13px] font-700 text-ink">By department</p>
+                      <p className="text-[11px] text-ink-3">Pick one to open those records</p>
+                    </div>
+                    <ul className="grid gap-2.5">
+                      {DEPARTMENTS.map((d, i) => {
+                        const value = STAFF.filter(p => p.d === d).length || 3;
+                        return (
+                          <li key={d}>
+                            <button type="button" onClick={() => showDepartment(d)}
+                              className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center
+                                         gap-3 rounded-[6px] px-1 py-1 text-left transition-colors
+                                         hover:bg-surface-tint">
+                              <span className="min-w-0">
+                                <span className="mb-1 block truncate text-[12px] text-ink-2
+                                                 transition-colors group-hover:text-brand-700">{d}</span>
+                                <span className="block h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                                  <motion.span className="block h-full rounded-full bg-brand-500"
+                                    initial={reduced ? false : { width: 0 }}
+                                    animate={{ width: `${(value / 4) * 100}%` }}
+                                    transition={{ duration: 0.7, delay: 0.1 + i * 0.08, ease: EASE }} />
+                                </span>
+                              </span>
+                              <span className="tnum w-8 text-right text-[13px] font-700 text-ink">{value}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 </div>
               )}

@@ -1,7 +1,10 @@
 import { useId, useMemo, useState } from 'react';
-import { motion, useInView, useReducedMotion } from 'motion/react';
+import {
+  motion, useInView, useReducedMotion, useScroll, useSpring, useTransform,
+  type MotionValue,
+} from 'motion/react';
 import { useRef } from 'react';
-import { EASE } from '../../lib/motion';
+import { DRAW_OFFSET, DRAW_SPRING, EASE } from '../../lib/motion';
 
 /* Shared: draw a smooth-ish path through points (Catmull-Rom to bezier). */
 function linePath(pts: [number, number][], tension = 0.35) {
@@ -23,17 +26,32 @@ function linePath(pts: [number, number][], tension = 0.35) {
    and a tooltip. One series, so no legend: the title names it.
    =============================================================== */
 export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'var(--c1)',
-                            valueSuffix = '', ariaLabel, trace = false }: {
+                            valueSuffix = '', ariaLabel, trace = false, scrub = false }: {
   data: number[]; labels: string[]; forecastFrom?: number; height?: number;
   color?: string; valueSuffix?: string; ariaLabel: string;
   /** Run a dot along the line as it draws, so arrival is unmistakable. */
   trace?: boolean;
+  /** Tie the draw to the scroll position instead of playing it once on entry. */
+  scrub?: boolean;
 }) {
   const uid = useId().replace(/:/g, '');
   const ref = useRef<SVGSVGElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: '-10% 0px' });
   const reduced = useReducedMotion();
   const [hover, setHover] = useState<number | null>(null);
+
+  // Hooks cannot be conditional, so the scroll value is always computed and
+  // only consulted when the caller asked for scrubbing.
+  const { scrollYProgress } = useScroll({ target: wrap, offset: [...DRAW_OFFSET] });
+  const draw = useSpring(scrollYProgress, DRAW_SPRING);
+  const areaOpacity = useTransform(draw, [0, 0.3], [0, 1]);
+  const headAt = useTransform(draw, v => `${Math.min(Math.max(v, 0), 1) * 100}%`);
+  const headOpacity = useTransform(draw, [0, 0.05, 0.9, 1], [0, 1, 1, 0]);
+  const scrubbing = scrub && !reduced;
+  // The fill is clipped to the drawn width, so the shading never runs ahead
+  // of the line. Points are evenly spaced in x, so path progress tracks x.
+  const clipW = useTransform(draw, v => Math.min(Math.max(v, 0), 1) * 560);
 
   const W = 560, H = height, PAD_X = 12, PAD_T = 16, PAD_B = 26;
   const min = Math.min(...data), max = Math.max(...data);
@@ -48,7 +66,7 @@ export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'v
   const area = `${linePath(pts.slice(0, split + 1))} L ${x(split)} ${H - PAD_B} L ${PAD_X} ${H - PAD_B} Z`;
 
   return (
-    <div className="relative">
+    <div ref={wrap} className="relative">
       <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full" role="img"
            aria-label={ariaLabel}
            onPointerLeave={() => setHover(null)}
@@ -64,6 +82,11 @@ export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'v
             <stop offset="0%" stopColor={color} stopOpacity="0.16" />
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
+          {scrubbing && (
+            <clipPath id={`c${uid}`}>
+              <motion.rect x="0" y="0" height={H} style={{ width: clipW }} />
+            </clipPath>
+          )}
         </defs>
 
         {/* recessive baseline only: no full grid */}
@@ -71,15 +94,20 @@ export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'v
               stroke="var(--border)" strokeWidth="1" />
 
         <motion.path d={area} fill={`url(#g${uid})`}
-          initial={reduced ? false : { opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.7, delay: 0.25, ease: EASE }} />
+          clipPath={scrubbing ? `url(#c${uid})` : undefined}
+          {...(scrubbing
+            ? { style: { opacity: areaOpacity } }
+            : { initial: reduced ? false : { opacity: 0 },
+                animate: inView ? { opacity: 1 } : {},
+                transition: { duration: 0.7, delay: 0.25, ease: EASE } })} />
 
         <motion.path d={solid} fill="none" stroke={color} strokeWidth="2"
           strokeLinecap="round" strokeLinejoin="round"
-          initial={reduced ? false : { pathLength: 0 }}
-          animate={inView ? { pathLength: 1 } : {}}
-          transition={{ duration: 1.1, ease: EASE }} />
+          {...(scrubbing
+            ? { style: { pathLength: draw } }
+            : { initial: reduced ? false : { pathLength: 0 },
+                animate: inView ? { pathLength: 1 } : {},
+                transition: { duration: 1.1, ease: EASE } })} />
 
         {dashed && (
           <motion.path d={dashed} fill="none" stroke={color} strokeWidth="2"
@@ -91,13 +119,23 @@ export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'v
 
         {/* the travelling head: rides the line while it draws */}
         {trace && !reduced && (
-          <motion.circle
-            r="5" cx={0} cy={0} fill={color} stroke="var(--surface)" strokeWidth="2"
-            style={{ offsetPath: `path("${solid}")`, offsetRotate: '0deg' }}
-            initial={{ offsetDistance: '0%', opacity: 0 }}
-            animate={inView ? { offsetDistance: '100%', opacity: [0, 1, 1, 0] } : {}}
-            transition={{ duration: 1.6, ease: 'easeInOut', times: undefined }}
-          />
+          scrubbing ? (
+            /* the head sits wherever the scroll has drawn to, and can be
+               walked back up the line by scrolling the other way */
+            <motion.circle
+              r="5" cx={0} cy={0} fill={color} stroke="var(--surface)" strokeWidth="2"
+              style={{ offsetPath: `path("${solid}")`, offsetRotate: '0deg',
+                       offsetDistance: headAt, opacity: headOpacity }}
+            />
+          ) : (
+            <motion.circle
+              r="5" cx={0} cy={0} fill={color} stroke="var(--surface)" strokeWidth="2"
+              style={{ offsetPath: `path("${solid}")`, offsetRotate: '0deg' }}
+              initial={{ offsetDistance: '0%', opacity: 0 }}
+              animate={inView ? { offsetDistance: '100%', opacity: [0, 1, 1, 0] } : {}}
+              transition={{ duration: 1.6, ease: 'easeInOut', times: undefined }}
+            />
+          )
         )}
 
         {hover != null && (
@@ -130,17 +168,42 @@ export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'v
   );
 }
 
+/** One bar. Split out so its scroll transform can be a hook of its own. */
+function Bar({ pct, tone, order, fill, inView, reduced, scrubbing }: {
+  pct: number; tone: string; order: number; fill: MotionValue<number>;
+  inView: boolean; reduced: boolean; scrubbing: boolean;
+}) {
+  // Each bar takes its own slice of the playhead, so they fill in sequence.
+  const start = Math.min(order * 0.12, 0.4);
+  const width = useTransform(fill, [start, start + 0.55], ['0%', `${pct}%`], { clamp: true });
+  return (
+    <motion.div className="h-full rounded-full" style={{ background: tone,
+      ...(scrubbing ? { width } : {}) }}
+      {...(scrubbing ? {} : {
+        initial: reduced ? false : { width: 0 },
+        animate: inView ? { width: `${pct}%` } : {},
+        transition: { duration: 0.9, delay: 0.06 * order, ease: EASE },
+      })} />
+  );
+}
+
 /* ===============================================================
    Horizontal bars. 4px rounded data-end, 2px surface gap.
    =============================================================== */
-export function BarRows({ rows, max, suffix = '', ariaLabel }: {
+export function BarRows({ rows, max, suffix = '', ariaLabel, scrub = false }: {
   rows: { label: string; value: number; tone?: string }[]; max?: number;
   suffix?: string; ariaLabel: string;
+  /** Tie the fill to the scroll position instead of playing it once on entry. */
+  scrub?: boolean;
 }) {
   const ref = useRef<HTMLUListElement>(null);
   const inView = useInView(ref, { once: true, margin: '-10% 0px' });
   const reduced = useReducedMotion();
   const top = max ?? Math.max(...rows.map(r => r.value));
+
+  const { scrollYProgress } = useScroll({ target: ref, offset: [...DRAW_OFFSET] });
+  const fill = useSpring(scrollYProgress, DRAW_SPRING);
+  const scrubbing = scrub && !reduced;
 
   return (
     <ul ref={ref} className="grid gap-3" aria-label={ariaLabel}>
@@ -151,13 +214,8 @@ export function BarRows({ rows, max, suffix = '', ariaLabel }: {
               <span className="t-small truncate text-ink-2">{r.label}</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: r.tone ?? 'var(--c1)' }}
-                initial={reduced ? false : { width: 0 }}
-                animate={inView ? { width: `${(r.value / top) * 100}%` } : {}}
-                transition={{ duration: 0.9, delay: 0.06 * i, ease: EASE }}
-              />
+              <Bar pct={(r.value / top) * 100} tone={r.tone ?? 'var(--c1)'} order={i}
+                   fill={fill} inView={inView} reduced={!!reduced} scrubbing={scrubbing} />
             </div>
           </div>
           <span className="tnum w-14 text-right text-sm font-700 text-ink">{r.value}{suffix}</span>

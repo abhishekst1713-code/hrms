@@ -5,12 +5,6 @@ const COLUMNS = [
     { label: 'The product', href: '#product' },
     { label: 'Reporting', href: '#reporting' },
   ]},
-  { title: 'Modules', links: [
-    { label: 'Payroll and statutory', href: '#platform' },
-    { label: 'Leave and attendance', href: '#platform' },
-    { label: 'Letters and templates', href: '#platform' },
-    { label: 'API, webhooks and audit', href: '#platform' },
-  ]},
   { title: 'Company', links: [
     { label: 'Infopace Management', href: 'https://www.infopaceindia.com' },
     { label: 'Book a demo', href: '#book' },
@@ -21,7 +15,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-hairline bg-surface py-16">
       <div className="rail">
-        <div className="grid gap-10 md:grid-cols-[1.5fr_repeat(3,1fr)]">
+        <div className="grid gap-10 md:grid-cols-[1.5fr_repeat(2,1fr)]">
           <div>
             {/* the footer has room for the full lockup, tagline and all */}
             <img src="/infopace-lockup.webp" alt="Infopace, commitment to excellence"

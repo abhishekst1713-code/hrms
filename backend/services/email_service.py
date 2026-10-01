@@ -252,6 +252,74 @@ def send_email(to_email, subject, body_text, from_label='HR Team', attachments=N
     return sent
 
 
+def describe():
+    """A safe summary of the mail configuration, for a diagnostics endpoint.
+
+    Never returns a password or a full API key — only whether each is set
+    and how long it is, which is what tells you a Gmail app password has
+    been pasted with its spaces still in."""
+    cfg = _smtp_config()
+    name = transport()
+    keys = {k: bool(os.getenv(k)) for k in
+            ('RESEND_API_KEY', 'BREVO_API_KEY', 'SENDGRID_API_KEY')}
+    return {
+        'transport': name or None,
+        'configured': bool(name),
+        'from_address': from_address() or None,
+        'provider_keys_set': keys,
+        'smtp': {
+            'host': cfg['host'] or None,
+            'port': cfg['port'],
+            'user': cfg['user'] or None,
+            'pass_set': bool(cfg['pass']),
+            'pass_length': len(cfg['pass']),
+            'pass_has_space': ' ' in cfg['pass'],
+        },
+    }
+
+
+def check_connection():
+    """Connect, negotiate TLS and sign in — without sending anything.
+
+    Separating this from a send is what makes a failure readable: a refused
+    connection, a rejected password and a rejected recipient are three
+    different problems that all surface as "it didn't work"."""
+    name = transport()
+    if not name:
+        return False, 'no transport configured'
+    if name != 'smtp':
+        # An HTTP provider has no session to open; the key is only checked
+        # when a message is actually posted.
+        return True, f'{name} sends over HTTPS — nothing to connect to; send a test message to verify the key'
+
+    cfg = _smtp_config()
+    timeout = int(os.getenv('SMTP_TIMEOUT', 20))
+    try:
+        if cfg['port'] == 465:
+            with smtplib.SMTP_SSL(cfg['host'], cfg['port'], timeout=timeout) as s:
+                s.login(cfg['user'], cfg['pass'])
+        else:
+            with smtplib.SMTP(cfg['host'], cfg['port'], timeout=timeout) as s:
+                s.ehlo(); s.starttls(); s.ehlo()
+                s.login(cfg['user'], cfg['pass'])
+    except smtplib.SMTPAuthenticationError as e:
+        code = e.smtp_code
+        detail = (e.smtp_error or b'').decode(errors='replace').strip()[:200]
+        if code == 535:
+            return False, (f'{cfg["host"]} rejected the credentials (535). For Gmail, SMTP_PASS '
+                           f'must be a 16-character App Password with no spaces. Server said: {detail}')
+        return False, f'authentication failed ({code}): {detail}'
+    except OSError as e:
+        errno = getattr(e, 'errno', None)
+        if errno in (97, 101, 110, 113):
+            return False, f'{e} — {BLOCKED_PORT_HINT}'
+        return False, f'could not reach {cfg["host"]}:{cfg["port"]} — {e}'
+    except Exception as e:
+        return False, str(e)
+
+    return True, f'connected to {cfg["host"]}:{cfg["port"]} and signed in as {cfg["user"]}'
+
+
 def send_invite_email(to_email, name, company_name, accept_url):
     subject = f'You’ve been invited to {company_name}'
     body = f"""Hi {name},

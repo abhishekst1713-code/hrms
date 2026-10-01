@@ -322,3 +322,15 @@
   .wordcycle > span { animation: none; opacity: 0; }
   .wordcycle > span:first-child { opacity: 1; }
 }
+
+/* ── Module strip: a continuously scrolling row, not a static list.
+   The track holds the content twice; animating to -50% loops it with no
+   seam. Paused on hover or focus so a reader can stop on one and click it,
+   and the site-wide reduced-motion rule above already zeroes it out. ── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track { animation: marquee 32s linear infinite; }
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track { animation-play-state: paused; }
