@@ -26,18 +26,70 @@ type State = 'idle' | 'sending' | 'sent' | 'error';
 
 type Field = 'name' | 'company_name' | 'phone' | 'email';
 const EMPTY: Record<Field, string> = { name: '', company_name: '', phone: '', email: '' };
+const NO_ERRORS: Record<Field, string> = { name: '', company_name: '', phone: '', email: '' };
 
 const FIELDS: { key: Field; label: string; type: string; placeholder: string;
-                autoComplete: string; inputMode?: 'email' | 'tel' | 'text' }[] = [
+                autoComplete: string; maxLength: number;
+                inputMode?: 'email' | 'tel' | 'text' }[] = [
   { key: 'name', label: 'Full name', type: 'text', placeholder: 'Your name',
-    autoComplete: 'name' },
+    autoComplete: 'name', maxLength: 120 },
   { key: 'company_name', label: 'Company name', type: 'text', placeholder: 'Company name',
-    autoComplete: 'organization' },
+    autoComplete: 'organization', maxLength: 160 },
   { key: 'phone', label: 'Phone number', type: 'tel', placeholder: 'Phone number',
-    autoComplete: 'tel', inputMode: 'tel' },
+    autoComplete: 'tel', inputMode: 'tel', maxLength: 20 },
   { key: 'email', label: 'Work email address', type: 'email', placeholder: 'you@organization.com',
-    autoComplete: 'email', inputMode: 'email' },
+    autoComplete: 'email', inputMode: 'email', maxLength: 254 },
 ];
+
+/* Mirrors the validation in landing/api/demo-requests.js and
+   backend/routes/demo_requests.py exactly, so a submission that passes here
+   never bounces off the server with a 400 the visitor can't make sense of. */
+const EMAIL_RE = /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/;
+const LOCAL_TYPO_RE = /^\.|\.$|\.\.|^www\./i;
+const PHONE_RE = /^\+?[\d\s()\-.]+$/;
+
+function validateField(key: Field, raw: string): string {
+  const value = raw.trim();
+  if (key === 'name') {
+    if (!value) return 'Enter your name.';
+    if (value.length > 120) return 'That name is too long.';
+    return '';
+  }
+  if (key === 'company_name') {
+    if (!value) return 'Enter your company name.';
+    if (value.length > 160) return 'That company name is too long.';
+    return '';
+  }
+  if (key === 'phone') {
+    if (!value) return 'Enter your phone number.';
+    const digits = value.replace(/\D/g, '');
+    if (!PHONE_RE.test(value) || digits.length < 7 || digits.length > 15) {
+      return 'Enter a valid phone number, with country code if outside India.';
+    }
+    return '';
+  }
+  // email
+  if (!value) return 'Enter your work email address.';
+  if (value.length > 254 || !EMAIL_RE.test(value)) return 'Enter a valid email address.';
+  if (LOCAL_TYPO_RE.test(value.split('@')[0])) {
+    return 'That address does not look right. Check for a stray "www." or a misplaced dot.';
+  }
+  return '';
+}
+
+/* The server's error text is the source of truth for anything it can reject
+   that the client could not already catch (e.g. an address that looks fine
+   here but bounces a format check written in Python). Route it back to the
+   field it's about so it lands next to the input, not as an unexplained
+   banner. */
+function fieldForServerError(message: string): Field | null {
+  const m = message.toLowerCase();
+  if (m.includes('name is too long') || m.includes('enter your name')) return 'name';
+  if (m.includes('company')) return 'company_name';
+  if (m.includes('phone')) return 'phone';
+  if (m.includes('email') || m.includes('address')) return 'email';
+  return null;
+}
 
 export default function FinalCta() {
   const ref = useRef<HTMLElement>(null);
@@ -52,19 +104,37 @@ export default function FinalCta() {
   const [honeypot, setHoneypot] = useState('');
   const [state, setState] = useState<State>('idle');
   const [message, setMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<Field, string>>(NO_ERRORS);
   // The API reports whether the confirmation actually went out. Don't promise
   // an email that SMTP failed to send — the request is still safely stored.
   const [confirmed, setConfirmed] = useState(false);
 
+  const handleChange = (key: Field, value: string) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+    if (fieldErrors[key]) setFieldErrors(prev => ({ ...prev, [key]: '' }));
+    if (state === 'error') setState('idle');
+  };
+
+  const handleBlur = (key: Field) => {
+    setFieldErrors(prev => ({ ...prev, [key]: validateField(key, form[key]) }));
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (state === 'sending') return;
-    const missing = FIELDS.find(f => !form[f.key].trim());
-    if (missing) {
+
+    const errors = { ...NO_ERRORS };
+    for (const f of FIELDS) errors[f.key] = validateField(f.key, form[f.key]);
+    const firstInvalid = FIELDS.find(f => errors[f.key]);
+    if (firstInvalid) {
+      setFieldErrors(errors);
       setState('error');
-      setMessage(`Enter your ${missing.label.toLowerCase()}.`);
+      setMessage('Check the highlighted field' + (FIELDS.filter(f => errors[f.key]).length > 1 ? 's' : '') + ' below.');
+      document.getElementById(`demo-${firstInvalid.key}`)?.focus();
       return;
     }
+
+    setFieldErrors(NO_ERRORS);
     setState('sending');
     setMessage('');
     try {
@@ -83,9 +153,20 @@ export default function FinalCta() {
       // the API sends a usable sentence for a bad address; anything else is ours
       const body = await res.json().catch(() => ({}));
       setState('error');
-      setMessage(res.status === 429
-        ? 'Too many attempts just now. Try again in a minute.'
-        : body.error || 'That did not go through. Try again, or write to us directly.');
+      if (res.status === 429) {
+        setMessage('Too many attempts just now. Try again in a minute.');
+      } else if (body.error) {
+        const field = fieldForServerError(body.error);
+        if (field) {
+          setFieldErrors(prev => ({ ...prev, [field]: body.error }));
+          setMessage('Check the highlighted field below.');
+          document.getElementById(`demo-${field}`)?.focus();
+        } else {
+          setMessage(body.error);
+        }
+      } else {
+        setMessage('That did not go through. Try again, or write to us directly.');
+      }
     } catch {
       setState('error');
       setMessage('We could not reach the server. Check your connection, or write to us directly.');
@@ -171,19 +252,25 @@ export default function FinalCta() {
                         <input
                           id={`demo-${f.key}`} name={f.key} type={f.type} required
                           value={form[f.key]}
-                          onChange={e => {
-                            const v = e.target.value;
-                            setForm(prev => ({ ...prev, [f.key]: v }));
-                            if (state === 'error') setState('idle');
-                          }}
+                          maxLength={f.maxLength}
+                          onChange={e => handleChange(f.key, e.target.value)}
+                          onBlur={() => handleBlur(f.key)}
                           placeholder={f.placeholder}
                           autoComplete={f.autoComplete} inputMode={f.inputMode}
-                          aria-invalid={state === 'error'}
-                          aria-describedby={state === 'error' ? 'demo-error' : undefined}
-                          className="h-14 w-full rounded-[12px] border border-white/20 bg-white/[0.08]
+                          aria-invalid={Boolean(fieldErrors[f.key])}
+                          aria-describedby={fieldErrors[f.key] ? `demo-${f.key}-error` : undefined}
+                          className={`h-14 w-full rounded-[12px] border bg-white/[0.08]
                                      px-5 text-[15px] text-white outline-none transition-colors
-                                     placeholder:text-[var(--on-deep-2)]
-                                     focus:border-[var(--on-deep-3)] focus:bg-white/[0.12]" />
+                                     placeholder:text-[var(--on-deep-2)] focus:bg-white/[0.12]
+                                     ${fieldErrors[f.key]
+                                       ? 'border-[var(--crit-deep)] focus:border-[var(--crit-deep)]'
+                                       : 'border-white/20 focus:border-[var(--on-deep-3)]'}`} />
+                        {fieldErrors[f.key] && (
+                          <p id={`demo-${f.key}-error`} role="alert"
+                             className="mt-1.5 text-[13px] text-[var(--crit-deep)]">
+                            {fieldErrors[f.key]}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
