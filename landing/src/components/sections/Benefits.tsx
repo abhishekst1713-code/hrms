@@ -19,7 +19,7 @@ function Block({ flip, children, media }: {
   const y = useTransform(scrollYProgress, [0, 1], [26, -26]);
 
   return (
-    <div ref={ref} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+    <div ref={ref} className="grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
       <motion.div
         initial={reduced ? false : { opacity: 0, x: flip ? 30 : -30 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -40,14 +40,14 @@ export default function Benefits() {
   // x +/-30px, so a block still waiting to animate in sat 30px off the rail and
   // widened the document on a phone. clip does not create a scroll container.
   return (
-    <section className="overflow-x-clip bg-surface py-24 lg:py-32">
+    <section className="overflow-x-clip bg-surface py-16 lg:py-24">
       <div className="rail">
         <div className="max-w-[54ch]">
           <Eyebrow>Outcomes</Eyebrow>
           <h2 className="t-h2 mt-4 text-balance text-ink">What changes once it is running</h2>
         </div>
 
-        <div className="mt-16 grid gap-24 lg:gap-32">
+        <div className="mt-10 grid gap-12 lg:gap-16">
           <Block media={
             <div className="panel-float p-7">
               <div className="flex items-center justify-between gap-3">
@@ -107,25 +107,25 @@ export default function Benefits() {
           </Block>
 
           <Block media={
-            <div className="grid grid-cols-2 gap-4">
-              <div className="panel grid place-items-center p-6">
-                <Gauge value={100} label="Records scoped to a tenant" size={124} />
+            <div className="mx-auto grid max-w-[380px] grid-cols-2 gap-2.5">
+              <div className="panel grid place-items-center p-4">
+                <Gauge value={100} label="Records scoped to a tenant" size={84} />
               </div>
               {/* 45 is a count, not a proportion, so it gets a figure rather
                   than a dial. */}
-              <div className="panel grid place-items-center p-6 text-center">
+              <div className="panel grid place-items-center p-4 text-center">
                 <p className="t-metric text-ink">45</p>
-                <p className="t-small mt-2 text-ink-2">Permissions across 5 roles</p>
+                <p className="t-small mt-1.5 text-ink-2">Permissions across 5 roles</p>
               </div>
-              <div className="panel col-span-2 p-6">
+              <div className="panel col-span-2 p-4">
                 <p className="t-micro text-ink-3">Screens by module group</p>
-                <div className="mt-3 flex items-end gap-1" aria-hidden>
+                <div className="mt-2.5 flex h-11 items-end gap-1" aria-hidden>
                   {[9,14,22,31,26,17,11,6].map((h, i) => (
                     <span key={i} className="w-full rounded-t-[3px] bg-brand-300"
-                          style={{ height: h * 2.2 }} />
+                          style={{ height: `${(h / 31) * 100}%` }} />
                   ))}
                 </div>
-                <p className="t-small mt-3 text-ink-2">
+                <p className="t-small mt-2.5 text-ink-2">
                   Thirty two screens across people, payroll, attendance, letters and
                   organisation.
                 </p>
