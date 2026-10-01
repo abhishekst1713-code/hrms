@@ -56,33 +56,42 @@ def _notify_address():
 
 
 def _confirmation_body(email: str) -> str:
-    return f"""Thanks for getting in touch.
+    return f"""Hi there,
 
-We have your request for a walkthrough of Infopace HR Automation against
-{email}, and someone from the team will reply to arrange a time.
+Thank you for your interest in Infopace HR Automation.
+
+We've received your request for a product walkthrough at {email}, and
+someone from our team will reach out shortly to find a time that works
+for you.
 
 What happens next:
 
-  1. We reply to book a slot that suits you.
-  2. We walk you through the product on your own structure: your
-     departments, your leave policy, your payroll setup.
-  3. If it fits, we set up your tenant, branding and first records with you.
+  1. We'll get in touch to book a slot that suits your schedule.
+  2. We'll walk you through the product using your own structure —
+     your departments, leave policies, and payroll setup — so you can
+     see exactly how it would work for your team.
+  3. If it's a good fit, we'll help you set up your account, branding,
+     and first records together.
 
-If you did not request this, you can ignore this message. Nothing has been
-created and we will not contact you again.
+If you didn't submit this request, you can simply ignore this email —
+no account has been created and we won't be in touch again.
 
+Looking forward to showing you around.
+
+Warm regards,
+Team Infopace
 Infopace Management Pvt Ltd
 """
 
 
 def _notification_body(email: str, source: str, when: datetime) -> str:
-    return f"""A new demo request came in from the website.
+    return f"""New demo request received from the website.
 
-  Email   : {email}
-  Source  : {source or 'landing'}
-  Received: {when.strftime('%d %b %Y, %H:%M')} UTC
+  Email      : {email}
+  Source     : {source or 'landing'}
+  Received   : {when.strftime('%d %b %Y, %H:%M')} UTC
 
-Reply to the address above to arrange the walkthrough.
+Please reach out to the address above to schedule the walkthrough.
 """
 
 
