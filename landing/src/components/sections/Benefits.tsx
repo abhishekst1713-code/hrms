@@ -107,25 +107,25 @@ export default function Benefits() {
           </Block>
 
           <Block media={
-            <div className="mx-auto grid max-w-[380px] grid-cols-2 gap-2.5">
-              <div className="panel grid place-items-center p-4">
-                <Gauge value={100} label="Records scoped to a tenant" size={84} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="panel grid place-items-center p-6">
+                <Gauge value={100} label="Records scoped to a tenant" size={124} />
               </div>
               {/* 45 is a count, not a proportion, so it gets a figure rather
                   than a dial. */}
-              <div className="panel grid place-items-center p-4 text-center">
+              <div className="panel grid place-items-center p-6 text-center">
                 <p className="t-metric text-ink">45</p>
-                <p className="t-small mt-1.5 text-ink-2">Permissions across 5 roles</p>
+                <p className="t-small mt-2 text-ink-2">Permissions across 5 roles</p>
               </div>
-              <div className="panel col-span-2 p-4">
+              <div className="panel col-span-2 p-6">
                 <p className="t-micro text-ink-3">Screens by module group</p>
-                <div className="mt-2.5 flex h-11 items-end gap-1" aria-hidden>
+                <div className="mt-3 flex items-end gap-1" aria-hidden>
                   {[9,14,22,31,26,17,11,6].map((h, i) => (
                     <span key={i} className="w-full rounded-t-[3px] bg-brand-300"
-                          style={{ height: `${(h / 31) * 100}%` }} />
+                          style={{ height: h * 2.2 }} />
                   ))}
                 </div>
-                <p className="t-small mt-2.5 text-ink-2">
+                <p className="t-small mt-3 text-ink-2">
                   Thirty two screens across people, payroll, attendance, letters and
                   organisation.
                 </p>
