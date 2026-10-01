@@ -47,21 +47,28 @@ const inr = (n: number) => '₹' + n.toLocaleString('en-IN');
 const payFor = (code: string) => PAY.find(r => r.c === code);
 const initials = (n: string) => n.split(' ').map(p => p[0]).slice(0,2).join('');
 
-const VIEWS = [
+export const VIEWS = [
   { id: 'directory', label: 'Employees', icon: UsersThreeIcon },
   { id: 'approvals', label: 'Approvals', icon: CheckCircleIcon },
   { id: 'payroll',   label: 'Payroll',   icon: CurrencyInrIcon },
   { id: 'analytics', label: 'Analytics', icon: ChartLineUpIcon },
 ] as const;
 
-type ViewId = typeof VIEWS[number]['id'];
+export type ViewId = typeof VIEWS[number]['id'];
 
 /* ---------------------------------------------------------------
    A working console rather than a picture of one: every filter,
    row, approval and payroll run below actually responds.
    --------------------------------------------------------------- */
-export default function LiveConsole() {
-  const [view, setView] = useState<ViewId>('directory');
+/**
+ * Controlled by the caller: Product.tsx owns `view` so the explainer list
+ * beside the console can drive it (and show which tab is current), rather
+ * than the console being a sealed box the list merely describes.
+ */
+export default function LiveConsole({ view, onViewChange }: {
+  view: ViewId; onViewChange: (v: ViewId) => void;
+}) {
+  const setView = onViewChange;
   const [filter, setFilter] = useState<'All' | 'Active' | 'Exiting'>('All');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<string | null>(null);

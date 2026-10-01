@@ -76,11 +76,11 @@ export default function Intelligence() {
             <ChartLineUpIcon size={15} weight="bold" aria-hidden /> Reporting and compliance
           </p>
           <h2 className="t-h2 mt-4 text-balance text-white">
-            The month, read back to you
+            Reporting that traces back to the payroll run
           </h2>
           <p className="t-body-xl mt-5 text-[var(--on-deep-2)]">
-            Headcount and the statutory register are derived from the payroll runs
-            you actually processed. Nothing here is keyed in twice.
+            Headcount and the statutory register read straight off the runs
+            you actually processed — nothing here is keyed in twice.
           </p>
         </div>
 
