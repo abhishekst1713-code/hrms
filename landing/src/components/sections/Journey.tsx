@@ -88,7 +88,7 @@ export default function Journey() {
       <div className="rail">
         <div className="mx-auto max-w-[62ch] text-center">
           <Eyebrow align="center">The method</Eyebrow>
-          <h2 className="t-h2 mt-4 text-balance text-ink">Hire to exit, on one record</h2>
+          <h2 className="t-h2 mt-4 text-balance text-ink">The full lifecycle, offer to exit</h2>
           <p className="t-body-xl mt-5 text-ink-2">
             One record per employee, carried through five stages. Each one leaves
             behind what the next one needs.
