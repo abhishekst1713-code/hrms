@@ -109,7 +109,7 @@ export default function Bento() {
               submitted.
             </p>
             <div className="mt-6">
-              <BarRows suffix="/mo" max={3} ariaLabel="Monthly leave cap by employee category"
+              <BarRows suffix="/mo" max={3} scrub ariaLabel="Monthly leave cap by employee category"
                 rows={[
                   { label: 'Regular', value: 2 },
                   { label: 'Probationary', value: 1, tone: 'var(--c2)' },

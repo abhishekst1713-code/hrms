@@ -1,5 +1,8 @@
 import { useId, useMemo, useState } from 'react';
-import { motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'motion/react';
+import {
+  motion, useInView, useReducedMotion, useScroll, useSpring, useTransform,
+  type MotionValue,
+} from 'motion/react';
 import { useRef } from 'react';
 import { DRAW_OFFSET, DRAW_SPRING, EASE } from '../../lib/motion';
 
@@ -165,17 +168,42 @@ export function TrendLine({ data, labels, forecastFrom, height = 190, color = 'v
   );
 }
 
+/** One bar. Split out so its scroll transform can be a hook of its own. */
+function Bar({ pct, tone, order, fill, inView, reduced, scrubbing }: {
+  pct: number; tone: string; order: number; fill: MotionValue<number>;
+  inView: boolean; reduced: boolean; scrubbing: boolean;
+}) {
+  // Each bar takes its own slice of the playhead, so they fill in sequence.
+  const start = Math.min(order * 0.12, 0.4);
+  const width = useTransform(fill, [start, start + 0.55], ['0%', `${pct}%`], { clamp: true });
+  return (
+    <motion.div className="h-full rounded-full" style={{ background: tone,
+      ...(scrubbing ? { width } : {}) }}
+      {...(scrubbing ? {} : {
+        initial: reduced ? false : { width: 0 },
+        animate: inView ? { width: `${pct}%` } : {},
+        transition: { duration: 0.9, delay: 0.06 * order, ease: EASE },
+      })} />
+  );
+}
+
 /* ===============================================================
    Horizontal bars. 4px rounded data-end, 2px surface gap.
    =============================================================== */
-export function BarRows({ rows, max, suffix = '', ariaLabel }: {
+export function BarRows({ rows, max, suffix = '', ariaLabel, scrub = false }: {
   rows: { label: string; value: number; tone?: string }[]; max?: number;
   suffix?: string; ariaLabel: string;
+  /** Tie the fill to the scroll position instead of playing it once on entry. */
+  scrub?: boolean;
 }) {
   const ref = useRef<HTMLUListElement>(null);
   const inView = useInView(ref, { once: true, margin: '-10% 0px' });
   const reduced = useReducedMotion();
   const top = max ?? Math.max(...rows.map(r => r.value));
+
+  const { scrollYProgress } = useScroll({ target: ref, offset: [...DRAW_OFFSET] });
+  const fill = useSpring(scrollYProgress, DRAW_SPRING);
+  const scrubbing = scrub && !reduced;
 
   return (
     <ul ref={ref} className="grid gap-3" aria-label={ariaLabel}>
@@ -186,13 +214,8 @@ export function BarRows({ rows, max, suffix = '', ariaLabel }: {
               <span className="t-small truncate text-ink-2">{r.label}</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: r.tone ?? 'var(--c1)' }}
-                initial={reduced ? false : { width: 0 }}
-                animate={inView ? { width: `${(r.value / top) * 100}%` } : {}}
-                transition={{ duration: 0.9, delay: 0.06 * i, ease: EASE }}
-              />
+              <Bar pct={(r.value / top) * 100} tone={r.tone ?? 'var(--c1)'} order={i}
+                   fill={fill} inView={inView} reduced={!!reduced} scrubbing={scrubbing} />
             </div>
           </div>
           <span className="tnum w-14 text-right text-sm font-700 text-ink">{r.value}{suffix}</span>

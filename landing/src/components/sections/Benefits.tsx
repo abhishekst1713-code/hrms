@@ -65,7 +65,7 @@ export default function Benefits() {
                 </div>
               </div>
               <div className="mt-6 border-t border-hairline pt-5">
-                <BarRows suffix="h" ariaLabel="Manual hours by stage"
+                <BarRows suffix="h" scrub ariaLabel="Manual hours by stage"
                   rows={[
                     { label: 'Collecting inputs', value: 3 },
                     { label: 'Chasing managers', value: 2, tone: 'var(--c3)' },
