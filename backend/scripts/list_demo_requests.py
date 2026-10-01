@@ -59,20 +59,21 @@ def main():
 
     if args.csv:
         w = csv.writer(sys.stdout)
-        w.writerow(['email', 'status', 'requests', 'source', 'first_asked', 'last_asked'])
+        w.writerow(['email', 'status', 'requests', 'mail_triggered', 'source', 'first_asked', 'last_asked'])
         for r in rows:
             w.writerow([r.get('email', ''), r.get('status', ''), r.get('request_count', 1),
-                        r.get('source', ''),
+                        r.get('mail_triggered', False), r.get('source', ''),
                         _when(r.get('created_at')), _when(r.get('last_requested_at'))])
         return 0
 
     print(f'{len(rows)} lead(s), newest first'
           + (f" with status {args.status!r}" if args.status else '') + '\n')
-    print(f'{"EMAIL":42} {"STATUS":11} {"#":>3}  {"LAST ASKED":17} SOURCE')
-    print('-' * 92)
+    print(f'{"EMAIL":42} {"STATUS":11} {"#":>3}  {"MAIL":5}  {"LAST ASKED":17} SOURCE')
+    print('-' * 99)
     for r in rows:
         print(f'{r.get("email", "")[:42]:42} {str(r.get("status", "")):11} '
-              f'{r.get("request_count", 1):>3}  {_when(r.get("last_requested_at")):17} '
+              f'{r.get("request_count", 1):>3}  {str(bool(r.get("mail_triggered", False))):5}  '
+              f'{_when(r.get("last_requested_at")):17} '
               f'{r.get("source", "")}')
 
     total = db.demo_requests.count_documents({})

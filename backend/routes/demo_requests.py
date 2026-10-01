@@ -119,8 +119,12 @@ def create_demo_request():
     result = db.demo_requests.update_one(
         {'email': email},
         {
+            # mail_triggered resets to False here because a fresh send is
+            # about to be attempted (or skipped, if email isn't configured);
+            # it only flips to True once _send_mail confirms delivery below.
             '$set':      {'email': email, 'source': source,
-                          'last_requested_at': now, 'updated_at': now},
+                          'last_requested_at': now, 'updated_at': now,
+                          'mail_triggered': False},
             '$inc':      {'request_count': 1},
             # status is set once: a repeat enquiry must not reset a lead
             # sales has already moved to 'contacted'.
@@ -138,7 +142,7 @@ def create_demo_request():
     # logs its own failures, so the thread cannot take anything down with it.
     configured = is_configured()
     if configured:
-        threading.Thread(target=_send_mail, args=(email, source, now),
+        threading.Thread(target=_send_mail, args=(db, email, source, now),
                          name=f'demo-mail-{email}', daemon=True).start()
     else:
         log.warning('demo request stored but email is not configured, no mail sent: %s', email)
@@ -151,10 +155,20 @@ def create_demo_request():
                     'queued': configured}), 201
 
 
-def _send_mail(email: str, source: str, when: datetime):
-    """Runs off the request thread. Failures are logged by send_email."""
-    send_email(email, 'Your Infopace HR demo request',
-               _confirmation_body(email), from_label='Infopace HR')
+def _send_mail(db, email: str, source: str, when: datetime):
+    """Runs off the request thread. Failures are logged by send_email.
+
+    mail_triggered reflects only the confirmation email to the lead
+    (the one the visitor is actually waiting on) — True once send_email
+    confirms it went out, False if it wasn't sent or raised/failed.
+    """
+    sent = send_email(email, 'Your Infopace HR demo request',
+                      _confirmation_body(email), from_label='Infopace HR')
+    try:
+        db.demo_requests.update_one({'email': email}, {'$set': {'mail_triggered': sent}})
+    except Exception:
+        log.exception('demo request: could not update mail_triggered for %s', email)
+
     notify_to = _notify_address()
     if notify_to:
         send_email(notify_to, f'Demo request: {email}',
